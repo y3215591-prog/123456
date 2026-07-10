@@ -57,7 +57,7 @@ class InboundService:
             raise ValueError("未找到化验结果")
         if lab["overall_result"] != "合格":
             raise ValueError("化验不合格，无法入库")
-        location = target_location or row.get("location_code", "")
+        location = target_location or row["location_code"] or ""
         inbound_id = self.inbound_dao.create_inbound(
             pre_inbound_id, operator=operator,
             date=datetime.now().strftime("%Y-%m-%d"),

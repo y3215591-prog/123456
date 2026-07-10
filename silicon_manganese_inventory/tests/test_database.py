@@ -106,6 +106,7 @@ class TestBackupRestore:
         backup = os.path.join(tempfile.mkdtemp(), "backup.db")
         db.backup(backup)
         with db.get_connection() as conn:
+            conn.execute("DELETE FROM locations")
             conn.execute("DELETE FROM warehouses")
             count = conn.execute("SELECT COUNT(*) FROM warehouses").fetchone()[0]
         assert count == 0

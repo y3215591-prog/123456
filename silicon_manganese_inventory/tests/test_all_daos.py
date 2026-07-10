@@ -184,10 +184,11 @@ class TestLocationDAO:
         return LocationDAO(db)
 
     def test_create_and_list(self, dao):
+        before = len(dao.list())
         dao.create("A01", "库位A01")
         dao.create("A02", "库位A02")
         results = dao.list()
-        assert len(results) == 2
+        assert len(results) == before + 2
 
     def test_delete_with_inventory_blocked(self, dao, db):
         from silicon_manganese_inventory.dao.seal_dao import SealDAO
@@ -197,8 +198,9 @@ class TestLocationDAO:
         seals = seal_dao.get_available_seals(batch_id, limit=1)
         seal_dao.update_seal_status([seals[0]["id"]], "in_stock",
                                     location_code="B01")
+        loc = dao.get_by_code("B01")
         with pytest.raises(ValueError, match="库存"):
-            dao.delete(dao.list()[0]["id"])
+            dao.delete(loc["id"])
 
 
 class TestSalesOrderDAO:

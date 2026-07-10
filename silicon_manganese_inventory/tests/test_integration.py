@@ -345,12 +345,12 @@ class TestPresetData:
 class TestLocationOperations:
     def test_create_location_and_query(self, db):
         loc_dao = LocationDAO(db)
-        loc_id = loc_dao.create("Z01", "成品库位1号")
+        loc_id = loc_dao.create("K01", "成品库位1号")
         assert loc_id > 0
 
         locs = loc_dao.list()
         codes = [l["code"] for l in locs]
-        assert "Z01" in codes
+        assert "K01" in codes
 
         loc = loc_dao.get(loc_id)
         assert loc["name"] == "成品库位1号"
