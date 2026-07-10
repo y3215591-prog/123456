@@ -52,23 +52,17 @@ class InboundConfirmPage(BasePage):
         lab_dao = LabDAO(self.db)
         for r in rows:
             seal_range = f"{r['seal_start']}~{r['seal_end']}" if r["seal_start"] else ""
-            if r.get("lab_status") == "tested":
-                lab = lab_dao.get_result(r["id"])
-                lab_detail = ""
-                if lab:
-                    lab_detail = (
-                        f"Mn:{lab['mn_content']} Si:{lab['si_content']} P:{lab['p_content']} "
-                        f"S:{lab['s_content']} C:{lab['c_content']} -> {lab['overall_result']}"
-                    )
-                data.append([
-                    r["order_no"], r["date"], r["batch_no"], r["quantity"],
-                    r["location_code"], "已化验", seal_range, lab_detail,
-                ])
-            else:
-                data.append([
-                    r["order_no"], r["date"], r["batch_no"], r["quantity"],
-                    r["location_code"], "待化验", seal_range, "",
-                ])
+            lab = lab_dao.get_result(r["id"])
+            lab_detail = ""
+            if lab:
+                lab_detail = (
+                    f"Mn:{lab['mn_content']} Si:{lab['si_content']} P:{lab['p_content']} "
+                    f"S:{lab['s_content']} C:{lab['c_content']} -> {lab['overall_result']}"
+                )
+            data.append([
+                r["order_no"], r["date"], r["batch_no"], r["quantity"],
+                r["location_code"], "已化验", seal_range, lab_detail,
+            ])
         self.populate_table(data)
 
     def _confirm(self):

@@ -5,6 +5,7 @@ from silicon_manganese_inventory.dao.base_dao import DailyShipmentDAO
 class ReportService:
     def __init__(self, db: DatabaseManager):
         self.db = db
+        self.shipment_dao = DailyShipmentDAO(db)
 
     def get_inventory_report(self, location_code=None, batch_no=None):
         with self.db.get_connection() as conn:
@@ -37,8 +38,7 @@ class ReportService:
         return row["total"] if row else 0
 
     def get_daily_shipment_report(self, **kwargs):
-        dao = DailyShipmentDAO(self.db)
-        return dao.list(**kwargs)
+        return self.shipment_dao.list(**kwargs)
 
     def get_order_summary(self):
         with self.db.get_connection() as conn:

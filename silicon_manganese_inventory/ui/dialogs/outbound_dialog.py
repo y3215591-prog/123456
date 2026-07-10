@@ -2,6 +2,7 @@ from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QLineEdit,
     QPushButton, QSpinBox, QComboBox, QLabel, QMessageBox, QTextEdit,
 )
+from PySide6.QtCore import QTimer
 from datetime import datetime
 from silicon_manganese_inventory.services.outbound_service import OutboundService
 from silicon_manganese_inventory.dao.base_dao import CustomerDAO, SpecDAO, LocationDAO, SalesOrderDAO
@@ -13,6 +14,10 @@ class OutboundDialog(QDialog):
         self.db = db
         self.setWindowTitle("新增出库")
         self.setMinimumWidth(550)
+        self._order_timer = QTimer(self)
+        self._order_timer.setSingleShot(True)
+        self._order_timer.setInterval(300)
+        self._order_timer.timeout.connect(self._on_order_changed_debounced)
         self._setup_ui()
 
     def _setup_ui(self):
@@ -34,7 +39,7 @@ class OutboundDialog(QDialog):
 
         self.sales_order_input = QLineEdit()
         self.sales_order_input.setPlaceholderText("输入后自动带出客户/规格信息")
-        self.sales_order_input.textChanged.connect(self._on_order_changed)
+        self.sales_order_input.textChanged.connect(self._on_order_text_changed)
         form.addRow("销售订单号:", self.sales_order_input)
 
         self.contract_input = QLineEdit()
@@ -113,6 +118,16 @@ class OutboundDialog(QDialog):
         self._on_qty_changed()
 
     def _on_order_changed(self, text):
+        self._order_remaining_update(text)
+
+    def _on_order_text_changed(self, text):
+        self._order_timer.start()
+
+    def _on_order_changed_debounced(self):
+        text = self.sales_order_input.text()
+        self._order_remaining_update(text)
+
+    def _order_remaining_update(self, text):
         self.order_remaining_label.setText("")
         if not text.strip():
             return
@@ -123,10 +138,8 @@ class OutboundDialog(QDialog):
                 idx = self.customer_combo.findText(order["customer_name"])
                 if idx >= 0:
                     self.customer_combo.setCurrentIndex(idx)
-            if order.get("spec_name"):
-                idx = self.spec_combo.findText(order["spec_name"])
-                if idx >= 0:
-                    self.spec_combo.setCurrentIndex(idx)
+            if order.get("material_desc"):
+                self.spec_combo.setCurrentText(order["material_desc"])
             if order.get("contract_no") and not self.contract_input.text():
                 self.contract_input.setText(order["contract_no"])
             ordered = order.get("quantity") or 0

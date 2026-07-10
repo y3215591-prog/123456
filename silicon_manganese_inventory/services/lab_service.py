@@ -7,6 +7,12 @@ class LabService:
     def __init__(self, db: DatabaseManager):
         self.db = db
         self.dao = LabDAO(db)
+        self._standards = None
+
+    def _get_standards(self):
+        if self._standards is None:
+            self._standards = self.dao.get_standards()
+        return self._standards
 
     def record_result(self, pre_inbound_id, mn_content=None, si_content=None,
                       c_content=None, s_content=None, p_content=None,

@@ -6,6 +6,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from datetime import datetime
 from silicon_manganese_inventory.dao.database import DatabaseManager
+from silicon_manganese_inventory.services.report_service import ReportService
 from silicon_manganese_inventory.ui.style import STYLE_QSS
 from silicon_manganese_inventory.ui.navbar import NavBar
 from silicon_manganese_inventory.utils.logger import get_logger, log_user_action
@@ -43,6 +44,7 @@ class MainWindow(QMainWindow):
         self.logger.info("初始化数据库...")
         self.db = DatabaseManager()
         self.db.initialize()
+        self.report_svc = ReportService(self.db)
         self.logger.info("数据库初始化完成")
         self.setWindowTitle("硅锰合金库存管理系统")
         self.setMinimumSize(1280, 800)
@@ -86,8 +88,7 @@ class MainWindow(QMainWindow):
         self._refresh_status_bar()
 
     def _refresh_status_bar(self):
-        from silicon_manganese_inventory.services.report_service import ReportService
-        svc = ReportService(self.db)
+        svc = self.report_svc
         total = svc.get_inventory_total()
         with self.db.get_connection() as conn:
             used = conn.execute(

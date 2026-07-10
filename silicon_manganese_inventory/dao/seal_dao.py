@@ -29,11 +29,14 @@ class SealDAO:
         return batch_id
 
     def _check_overlap(self, start_code, end_code):
+        s = int(start_code)
+        e = int(end_code)
         with self.db.get_connection() as conn:
             row = conn.execute(
                 """SELECT COUNT(*) FROM seal_batches
-                   WHERE NOT (? > end_code OR ? < start_code)""",
-                (start_code, end_code),
+                   WHERE ? >= CAST(start_code AS INTEGER)
+                     AND ? <= CAST(end_code AS INTEGER)""",
+                (e, s),
             ).fetchone()
         return row[0] > 0
 

@@ -34,8 +34,8 @@ class CustomerPage(BasePage):
         data = []
         for r in rows:
             data.append([
-                r["name"], r["contact"] or "",
-                r["phone"] or "", r["address"] or "",
+                r["name"], r["contact_person"] or "",
+                r["contact_phone"] or "", r["address"] or "",
                 r["remark"] or "",
             ])
         self.populate_table(data)

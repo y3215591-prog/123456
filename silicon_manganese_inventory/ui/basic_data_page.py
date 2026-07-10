@@ -22,24 +22,24 @@ class BasicDataPage(BasePage):
 
     def _on_type_changed(self, text):
         if text == "品名规格":
-            self.set_table_headers(["ID", "品名规格名称", "描述"])
+            self.set_table_headers(["ID", "品名规格名称", "备注"])
         elif text == "检验标准":
-            self.set_table_headers(["ID", "元素", "最小值", "最大值", "描述"])
+            self.set_table_headers(["ID", "元素", "最小值", "最大值", "备注"])
         elif text == "仓库":
-            self.set_table_headers(["ID", "仓库名称", "地址", "状态"])
+            self.set_table_headers(["ID", "仓库名称", "地址", "备注"])
         self.refresh()
 
     def refresh(self):
         text = self.type_combo.currentText()
         if text == "品名规格":
             rows = self.spec_dao.list()
-            data = [[r["id"], r["name"], r["description"] or ""] for r in rows]
+            data = [[r["id"], r["name"], r["remark"] or ""] for r in rows]
         elif text == "检验标准":
             rows = self.lab_dao.get_standards()
-            data = [[r["id"], r["element"], r["min_value"], r["max_value"], r["description"] or ""] for r in rows]
+            data = [[r["id"], r["element"], r["min_value"], r["max_value"], r["remark"] or ""] for r in rows]
         elif text == "仓库":
             rows = self.warehouse_dao.list()
-            data = [[r["id"], r["name"], r["address"] or "", "启用" if r["is_active"] else "停用"] for r in rows]
+            data = [[r["id"], r["name"], r["address"] or "", r["remark"] or ""] for r in rows]
         else:
             data = []
         self.populate_table(data)

@@ -21,6 +21,7 @@ class DailyShipmentPage(BasePage):
         self.add_search_button("搜索", self._do_search)
         self.add_header_button("+ 新增", self._add, "#27ae60")
         self.add_header_button("编辑", self._edit, "#3498db")
+        self.add_header_button("导出 Excel", self._export, "#2980b9")
 
         self.set_table_headers([
             "序号", "发货日期", "车牌", "客户代码", "客户名称",

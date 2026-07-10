@@ -17,8 +17,6 @@ class InboundService:
             raise ValueError("日期、批次号和数量为必填项")
         if not seal_batch_id:
             raise ValueError("请选择铅封号段")
-        with self.db.get_connection() as conn:
-            pass
         pid = self.inbound_dao.create_pre_inbound(
             date=date, batch_no=batch_no, quantity=quantity,
             spec_id=spec_id, location_code=location_code,
