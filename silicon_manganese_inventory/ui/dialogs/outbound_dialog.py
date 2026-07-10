@@ -141,6 +141,7 @@ class OutboundDialog(QDialog):
             else:
                 self.order_remaining_label.setStyleSheet(
                     "color: #e67e22; font-size: 13px; font-weight: bold;")
+        self._on_qty_changed()
 
     def _get_order_shipped(self, order_no):
         with self.db.get_connection() as conn:
@@ -169,7 +170,22 @@ class OutboundDialog(QDialog):
 
     def _on_qty_changed(self):
         qty = self.quantity_input.value()
-        self.seal_preview.setText(f"将自动分配 {qty} 个铅封号")
+        msg = f"将自动分配 {qty} 个铅封号"
+        sales_order = self.sales_order_input.text().strip()
+        if sales_order:
+            remaining = self._get_order_remaining_qty(sales_order)
+            if remaining is not None and qty > remaining:
+                msg += f"  [超发预警: 订单仅余 {remaining} 吨]"
+                self.quantity_input.setStyleSheet(
+                    "QSpinBox { color: #e74c3c; font-weight: bold; }")
+                self.seal_preview.setStyleSheet("color: #e74c3c;")
+            else:
+                self.quantity_input.setStyleSheet("")
+                self.seal_preview.setStyleSheet("")
+        else:
+            self.quantity_input.setStyleSheet("")
+            self.seal_preview.setStyleSheet("")
+        self.seal_preview.setText(msg)
 
     def _quick_add_customer(self):
         name = self.quick_cust_input.text().strip()
@@ -211,12 +227,6 @@ class OutboundDialog(QDialog):
             QMessageBox.warning(self, "错误", "请选择客户")
             return
         sales_order = self.sales_order_input.text().strip() or None
-        if sales_order:
-            remaining = self._get_order_remaining_qty(sales_order)
-            if remaining is not None and quantity > remaining:
-                QMessageBox.warning(self, "超发警告",
-                    f"该销售订单仅剩 {remaining} 吨未发，本次出库 {quantity} 吨超出余量")
-                return
         contract = self.contract_input.text().strip() or None
         plate = self.plate_input.text().strip() or None
         operator = self.operator_input.text()
