@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QLineEdit, QMessageBox
+from PySide6.QtWidgets import QLineEdit, QMessageBox, QComboBox, QLabel
 from PySide6.QtWidgets import QInputDialog
 from silicon_manganese_inventory.ui.base_page import BasePage
 from silicon_manganese_inventory.dao.base_dao import LocationDAO
@@ -9,18 +9,40 @@ class LocationPage(BasePage):
         super().__init__(db, "库位管理")
         self.loc_dao = LocationDAO(db)
 
+        self.type_combo = QComboBox()
+        self.type_combo.addItem("全部", None)
+        self.type_combo.addItem("自然块库位(Z*)", "Z")
+        self.type_combo.addItem("成品库位(A*)", "A")
+        self.add_search_field("类型:", self.type_combo)
+        self.add_search_button("搜索", self._do_search)
         self.add_header_button("+ 新增库位", self._add_location, "#27ae60")
-        self.set_table_headers(["库位编码", "库位名称", "所属仓库", "已用(吨)", "状态"])
+        self.set_table_headers([
+            "库位编码", "库位名称", "类型", "当前库存(吨)",
+        ])
+
+        self.total_label = QLabel("库位总数: 0")
+        self.total_label.setStyleSheet("font-size: 13px; font-weight: bold; color: #2c3e50;")
+        self.status_layout.addWidget(self.total_label)
+
+    def _do_search(self):
+        self.refresh()
 
     def refresh(self):
-        locations = self.loc_dao.list()
+        prefix = self.type_combo.currentData()
+        locations = self.loc_dao.list(code_prefix=prefix)
+        total_count = 0
+        total_stock = 0
         data = []
         for l in locations:
+            stock = self.loc_dao.get_available_qty(l["code"])
+            loc_type = "自然块" if l["code"].startswith("Z") else "成品"
             data.append([
-                l["code"], l["name"] or "", l.get("warehouse_name", "") or "",
-                l.get("used_qty", 0) or 0,
-                "启用" if l.get("status") == "active" else "停用",
+                l["code"], l["name"] or "", loc_type, stock,
             ])
+            total_count += 1
+            total_stock += stock
+        self.total_label.setText(
+            f"库位总数: {total_count} | 在库总量: {total_stock} 吨")
         self.populate_table(data)
 
     def _add_location(self):
