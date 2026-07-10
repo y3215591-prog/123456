@@ -17,7 +17,7 @@ class BasePage(QWidget):
         self.page_key = page_key or title
         self._filter_widgets = []
         self._column_count = 0
-        self._restored = False
+        self._restoring = False
         self._setup_ui()
 
     def _setup_ui(self):
@@ -42,8 +42,10 @@ class BasePage(QWidget):
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.table.horizontalHeader().setStretchLastSection(True)
+        self.table.horizontalHeader().setSectionsMovable(True)
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
-        self.table.horizontalHeader().sectionResized.connect(self._on_column_resized)
+        self.table.horizontalHeader().sectionResized.connect(self._on_header_changed)
+        self.table.horizontalHeader().sectionMoved.connect(self._on_header_moved)
         self.table.setStyleSheet("""
             QTableWidget { gridline-color: #ddd; font-size: 13px; }
             QTableWidget::item { padding: 4px 8px; }
@@ -60,7 +62,7 @@ class BasePage(QWidget):
         self._save_timer = QTimer(self)
         self._save_timer.setSingleShot(True)
         self._save_timer.setInterval(500)
-        self._save_timer.timeout.connect(self._save_column_widths)
+        self._save_timer.timeout.connect(self._save_header_state)
 
     def add_search_field(self, label, widget):
         self.search_layout.addWidget(QLabel(label))
@@ -108,34 +110,35 @@ class BasePage(QWidget):
         self._column_count = len(headers)
         self.table.setColumnCount(len(headers))
         self.table.setHorizontalHeaderLabels(headers)
-        saved_widths = _prefs.load_column_widths(self.page_key)
-        if saved_widths and len(saved_widths) == len(headers):
+        saved_state = _prefs.load_header_state(self.page_key)
+        if not saved_state.isEmpty():
             self._restoring = True
-            for i, w in enumerate(saved_widths):
-                if w > 0:
-                    self.table.setColumnWidth(i, w)
+            self.table.horizontalHeader().restoreState(saved_state)
             self._restoring = False
-            self._restored = True
-        else:
-            self._restoring = False
-            self.table.horizontalHeader().setSectionResizeMode(
-                QHeaderView.ResizeToContents)
-            QTimer.singleShot(200, self._initial_auto_fit_done)
+            return
+        self.table.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeToContents)
+        QTimer.singleShot(200, self._initial_auto_fit_done)
 
     def _initial_auto_fit_done(self):
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
-        self._save_column_widths()
+        self._save_header_state()
 
-    def _on_column_resized(self, column, old_width, new_width):
-        if getattr(self, '_restoring', False):
+    def _on_header_changed(self, column, old_width, new_width):
+        if self._restoring:
             return
         self._save_timer.start()
 
-    def _save_column_widths(self):
+    def _on_header_moved(self, logical_index, old_visual, new_visual):
+        if self._restoring:
+            return
+        self._save_timer.start()
+
+    def _save_header_state(self):
         if self._column_count <= 0:
             return
-        widths = [self.table.columnWidth(i) for i in range(self._column_count)]
-        _prefs.save_column_widths(self.page_key, widths)
+        state = self.table.horizontalHeader().saveState()
+        _prefs.save_header_state(self.page_key, state)
 
     def populate_table(self, rows, highlight_col=None, highlight_threshold=None):
         self.table.setRowCount(len(rows))

@@ -1,4 +1,4 @@
-from PySide6.QtCore import QSettings
+from PySide6.QtCore import QSettings, QByteArray
 
 
 class UIPreferences:
@@ -11,14 +11,14 @@ class UIPreferences:
     def load_filter(self, page_key, field_index, default=""):
         return self._settings.value(f"{page_key}/filter/{field_index}", default)
 
-    def save_column_widths(self, page_key, widths):
-        self._settings.setValue(f"{page_key}/column_widths", ",".join(str(w) for w in widths))
+    def save_header_state(self, page_key, state: QByteArray):
+        self._settings.setValue(f"{page_key}/header_state", state.toBase64())
 
-    def load_column_widths(self, page_key):
-        raw = self._settings.value(f"{page_key}/column_widths", "")
-        if not raw:
-            return []
-        return [int(x) for x in str(raw).split(",") if x]
+    def load_header_state(self, page_key):
+        raw = self._settings.value(f"{page_key}/header_state")
+        if raw:
+            return QByteArray.fromBase64(raw)
+        return QByteArray()
 
     def clear_page(self, page_key):
         self._settings.remove(f"{page_key}")
