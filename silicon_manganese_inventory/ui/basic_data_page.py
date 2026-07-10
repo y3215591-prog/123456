@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QComboBox, QPushButton, QHBoxLayout, QMessageBox
+from PySide6.QtWidgets import QComboBox
 from PySide6.QtWidgets import QInputDialog
 from silicon_manganese_inventory.ui.base_page import BasePage
 from silicon_manganese_inventory.dao.base_dao import SpecDAO, WarehouseDAO
@@ -13,12 +13,12 @@ class BasicDataPage(BasePage):
         self.lab_dao = LabDAO(db)
 
         self.type_combo = QComboBox()
-        self.type_combo.addItems(["品名规格", "检验标准", "仓库"])
         self.type_combo.currentTextChanged.connect(self._on_type_changed)
         self.add_search_field("数据类型:", self.type_combo)
 
         self.add_header_button("+ 新增", self._add_item, "#27ae60")
-        self._on_type_changed("品名规格")
+
+        self.type_combo.addItems(["品名规格", "检验标准", "仓库"])
 
     def _on_type_changed(self, text):
         if text == "品名规格":
@@ -54,10 +54,10 @@ class BasicDataPage(BasePage):
             element, ok = QInputDialog.getText(self, "新增检验标准", "元素名称 (如 Mn):")
             if not ok or not element.strip():
                 return
-            min_val, ok2 = QInputDialog.getDouble(self, "最小值", f"{element} 最小值:", 0, -999, 999, 3)
+            min_val, ok2 = QInputDialog.getDouble(self, "最小值", f"{element} 最小值:", 0, 0, 999, 5)
             if not ok2:
                 return
-            max_val, ok3 = QInputDialog.getDouble(self, "最大值", f"{element} 最大值:", 100, -999, 999, 3)
+            max_val, ok3 = QInputDialog.getDouble(self, "最大值", f"{element} 最大值:", 100, 0, 999, 5)
             if not ok3:
                 return
             self.lab_dao.update_standard(element.strip(), min_val, max_val)

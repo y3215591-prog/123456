@@ -51,13 +51,6 @@ class SealTraceDialog(QDialog):
 
         layout.addLayout(self.result_form)
 
-        status_map = {
-            "unused": "未使用",
-            "pre_allocated": "已预分配",
-            "in_stock": "已入库（在库）",
-            "shipped": "已出库",
-        }
-
         self.flow_label = QLabel("")
         self.flow_label.setStyleSheet("font-size: 14px; color: #2c3e50; font-weight: bold; padding: 12px;")
         layout.addWidget(self.flow_label)

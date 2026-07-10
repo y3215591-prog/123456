@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QTableWidget,
-    QTableWidgetItem, QCheckBox, QLabel, QMessageBox, QHeaderView,
+    QTableWidgetItem, QLabel, QMessageBox, QHeaderView,
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
@@ -20,17 +20,22 @@ class ExcelPreviewDialog(QDialog):
         self._setup_ui()
 
     def _load_data(self):
-        wb = openpyxl.load_workbook(self.file_path, data_only=True)
-        ws = wb.active
-        self.all_rows = []
-        for row in ws.iter_rows(values_only=True):
-            self.all_rows.append([str(c or "") for c in row])
-        wb.close()
+        try:
+            wb = openpyxl.load_workbook(self.file_path, data_only=True)
+            ws = wb.active
+            self.all_rows = []
+            for row in ws.iter_rows(values_only=True):
+                self.all_rows.append([str(c or "") for c in row])
+            wb.close()
+        except Exception as e:
+            QMessageBox.critical(self, "错误", f"无法读取文件: {e}")
+            self.all_rows = []
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
 
-        info = QLabel(f"文件: {self.file_path} | 类型: {self.import_type} | 共 {len(self.all_rows) - 1} 行数据")
+        row_count = max(len(self.all_rows) - 1, 0)
+        info = QLabel(f"文件: {self.file_path} | 类型: {self.import_type} | 共 {row_count} 行数据")
         info.setStyleSheet("font-size: 14px; color: #2c3e50; font-weight: bold; padding: 8px 0;")
         layout.addWidget(info)
 
@@ -84,10 +89,7 @@ class ExcelPreviewDialog(QDialog):
 
         layout.addLayout(btn_layout)
 
-        for i in range(len(self.checked)):
-            item = self.table.item(i, 0)
-            if item:
-                item.setBackground(QColor("#e8f5e9") if i in self.checked else QColor("#fce4ec"))
+        self._refresh_highlights()
 
     def _on_cell_clicked(self, row, col):
         if row in self.checked:
@@ -108,7 +110,6 @@ class ExcelPreviewDialog(QDialog):
         self.checked_label.setText(f"已选: 0 / {len(self.all_rows) - 1}")
 
     def _refresh_highlights(self):
-        from PySide6.QtGui import QColor
         for i in range(self.table.rowCount()):
             item = self.table.item(i, 0)
             if item:

@@ -7,44 +7,33 @@ class LabDAO:
 
     def save_result(self, pre_inbound_id, **kwargs):
         with self.db.get_connection() as conn:
-            existing = conn.execute(
-                "SELECT id FROM lab_results WHERE pre_inbound_id=?",
+            cursor = conn.execute(
+                """INSERT INTO lab_results
+                   (pre_inbound_id, mn_content, si_content, c_content,
+                    s_content, p_content, mn_result, si_result, c_result,
+                    s_result, p_result, overall_result, test_date, remark)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                   ON CONFLICT(pre_inbound_id) DO UPDATE SET
+                    mn_content=excluded.mn_content, si_content=excluded.si_content,
+                    c_content=excluded.c_content, s_content=excluded.s_content,
+                    p_content=excluded.p_content, mn_result=excluded.mn_result,
+                    si_result=excluded.si_result, c_result=excluded.c_result,
+                    s_result=excluded.s_result, p_result=excluded.p_result,
+                    overall_result=excluded.overall_result, test_date=excluded.test_date,
+                    remark=excluded.remark""",
+                (pre_inbound_id, kwargs.get("mn_content"),
+                 kwargs.get("si_content"), kwargs.get("c_content"),
+                 kwargs.get("s_content"), kwargs.get("p_content"),
+                 kwargs.get("mn_result", ""), kwargs.get("si_result", ""),
+                 kwargs.get("c_result", ""), kwargs.get("s_result", ""),
+                 kwargs.get("p_result", ""), kwargs.get("overall_result", ""),
+                 kwargs.get("test_date", ""), kwargs.get("remark", "")),
+            )
+            conn.execute(
+                "UPDATE pre_inbound_orders SET lab_status='tested', updated_at=datetime('now','localtime') WHERE id=?",
                 (pre_inbound_id,),
-            ).fetchone()
-            if existing:
-                sets = []
-                params = []
-                for key, val in kwargs.items():
-                    if val is not None:
-                        sets.append(f"{key}=?")
-                        params.append(val)
-                if sets:
-                    params.append(pre_inbound_id)
-                    conn.execute(
-                        f"UPDATE lab_results SET {', '.join(sets)} WHERE pre_inbound_id=?",
-                        params,
-                    )
-                return existing["id"]
-            else:
-                cursor = conn.execute(
-                    """INSERT INTO lab_results
-                       (pre_inbound_id, mn_content, si_content, c_content,
-                        s_content, p_content, mn_result, si_result, c_result,
-                        s_result, p_result, overall_result, test_date, remark)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                    (pre_inbound_id, kwargs.get("mn_content"),
-                     kwargs.get("si_content"), kwargs.get("c_content"),
-                     kwargs.get("s_content"), kwargs.get("p_content"),
-                     kwargs.get("mn_result", ""), kwargs.get("si_result", ""),
-                     kwargs.get("c_result", ""), kwargs.get("s_result", ""),
-                     kwargs.get("p_result", ""), kwargs.get("overall_result", ""),
-                     kwargs.get("test_date", ""), kwargs.get("remark", "")),
-                )
-                conn.execute(
-                    "UPDATE pre_inbound_orders SET lab_status='tested', updated_at=datetime('now','localtime') WHERE id=?",
-                    (pre_inbound_id,),
-                )
-                return cursor.lastrowid
+            )
+            return cursor.lastrowid
 
     def get_result(self, pre_inbound_id):
         with self.db.get_connection() as conn:

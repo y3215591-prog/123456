@@ -1,4 +1,3 @@
-import os
 import openpyxl
 from silicon_manganese_inventory.dao.database import DatabaseManager
 from silicon_manganese_inventory.dao.base_dao import (
@@ -16,7 +15,6 @@ class ExcelService:
         headers = [str(c.value or "").strip() for c in ws[1]]
         customer_dao = CustomerDAO(self.db)
         order_dao = SalesOrderDAO(self.db)
-        spec_dao = None
         from silicon_manganese_inventory.dao.base_dao import SpecDAO
         spec_dao = SpecDAO(self.db)
 

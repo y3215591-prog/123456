@@ -1,15 +1,13 @@
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QStackedWidget,
-    QStatusBar, QLabel, QPushButton, QFrame,
+    QStatusBar, QLabel, QComboBox,
 )
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
 from datetime import datetime
-from silicon_manganese_inventory.dao.database import DatabaseManager
 from silicon_manganese_inventory.services.report_service import ReportService
-from silicon_manganese_inventory.ui.style import STYLE_QSS
 from silicon_manganese_inventory.ui.navbar import NavBar
-from silicon_manganese_inventory.utils.logger import get_logger, log_user_action
+from silicon_manganese_inventory.utils.logger import get_logger
+from silicon_manganese_inventory.utils.themes import THEMES
+from silicon_manganese_inventory.utils.theme_manager import ThemeManager
 from silicon_manganese_inventory.ui.pre_inbound_page import PreInboundPage
 from silicon_manganese_inventory.ui.inbound_confirm_page import InboundConfirmPage
 from silicon_manganese_inventory.ui.outbound_page import OutboundPage
@@ -38,17 +36,15 @@ class MainWindow(QMainWindow):
         ("基础数据", 10),
     ]
 
-    def __init__(self):
+    def __init__(self, db):
         super().__init__()
         self.logger = get_logger()
-        self.logger.info("初始化数据库...")
-        self.db = DatabaseManager()
-        self.db.initialize()
+        self.db = db
         self.report_svc = ReportService(self.db)
-        self.logger.info("数据库初始化完成")
+        self.logger.info("主窗口初始化")
         self.setWindowTitle("硅锰合金库存管理系统")
         self.setMinimumSize(1280, 800)
-        self.setStyleSheet(STYLE_QSS)
+        self._tm = ThemeManager.instance()
         self._setup_ui()
         self._connect_signals()
 
@@ -60,12 +56,38 @@ class MainWindow(QMainWindow):
         layout.setSpacing(0)
 
         self.navbar = NavBar(self.NAV_ITEMS)
-        self.navbar.setFixedWidth(160)
+        self.navbar.setFixedWidth(170)
+        self.navbar.setObjectName("navBar")
         layout.addWidget(self.navbar)
 
+        right_side = QVBoxLayout()
+        right_side.setContentsMargins(0, 0, 0, 0)
+        right_side.setSpacing(0)
+
+        top_bar = QHBoxLayout()
+        top_bar.setContentsMargins(16, 8, 16, 8)
+        top_bar.addStretch()
+
+        theme_lbl = QLabel("主题:")
+        theme_lbl.setStyleSheet("font-size: 12px;")
+        self.theme_combo = QComboBox()
+        self.theme_combo.setFixedWidth(100)
+        for key, t in THEMES.items():
+            self.theme_combo.addItem(t["name"], key)
+        cur = self._tm.current_key
+        idx = self.theme_combo.findData(cur)
+        if idx >= 0:
+            self.theme_combo.setCurrentIndex(idx)
+        self.theme_combo.currentIndexChanged.connect(self._on_theme_changed)
+        top_bar.addWidget(theme_lbl)
+        top_bar.addWidget(self.theme_combo)
+        right_side.addLayout(top_bar)
+
         self.stack = QStackedWidget()
-        self.stack.setStyleSheet("background-color: #f5f6fa;")
-        layout.addWidget(self.stack)
+        self.stack.setObjectName("contentArea")
+        right_side.addWidget(self.stack)
+
+        layout.addLayout(right_side)
 
         self.pages = {
             0: PreInboundPage(self.db),
@@ -85,27 +107,47 @@ class MainWindow(QMainWindow):
 
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
+        self._apply_theme()
         self._refresh_status_bar()
 
+    def _apply_theme(self):
+        t = self._tm.current
+        nav_style = self._tm.navbar_style()
+        self.navbar.setStyleSheet(nav_style)
+        self.stack.setStyleSheet(f"background: {t['bg']}; border: none;")
+
+    def _on_theme_changed(self):
+        key = self.theme_combo.currentData()
+        if key:
+            self._tm.set_theme(key)
+            app = self._get_app()
+            if app:
+                self._tm.apply_global(app)
+            self._apply_theme()
+
+    def _get_app(self):
+        from PySide6.QtWidgets import QApplication
+        return QApplication.instance()
+
     def _refresh_status_bar(self):
-        svc = self.report_svc
-        total = svc.get_inventory_total()
         with self.db.get_connection() as conn:
+            total = conn.execute(
+                "SELECT COUNT(*) FROM seal_numbers WHERE status='in_stock'"
+            ).fetchone()[0]
             used = conn.execute(
                 "SELECT COUNT(*) FROM seal_numbers WHERE status='shipped'"
             ).fetchone()[0]
         now = datetime.now().strftime("%Y-%m-%d %H:%M")
         self.status_bar.showMessage(
-            f"  当前日期: {now}  |  库存总吨数: {total}  |  已用铅封号: {used}"
+            f"  当前日期: {now}  |  库存总铅封个数: {total}  |  已用铅封号: {used}"
         )
 
     def _connect_signals(self):
         self.navbar.nav_changed.connect(self._on_nav_changed)
+        self.pages[0].refresh()
 
     def _on_nav_changed(self, index):
         if index in self.pages:
-            name = dict(self.NAV_ITEMS).get(index, "未知")
-            self.logger.debug(f"切换到页面: {name}")
             self.stack.setCurrentWidget(self.pages[index])
             self.pages[index].refresh()
         self._refresh_status_bar()

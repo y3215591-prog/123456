@@ -1,6 +1,6 @@
-from dataclasses import dataclass, field, fields, asdict
-from datetime import date, datetime
-from typing import Optional, List
+from dataclasses import dataclass, fields
+from datetime import date
+from typing import Optional
 from enum import Enum
 
 

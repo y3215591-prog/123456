@@ -31,11 +31,10 @@ class DatabaseManager:
         self._seed_defaults()
 
     def backup(self, backup_path):
-        src = self.db_path
         dst = os.path.abspath(backup_path)
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
         with self.get_connection() as conn:
-            conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
-        shutil.copy2(src, dst)
+            conn.execute("VACUUM INTO ?", (dst,))
         return dst
 
     def restore(self, backup_path):
@@ -206,7 +205,7 @@ CREATE TABLE IF NOT EXISTS lab_results (
 
 CREATE TABLE IF NOT EXISTS lab_standards (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    element TEXT NOT NULL,
+    element TEXT UNIQUE NOT NULL,
     min_value REAL DEFAULT 0,
     max_value REAL DEFAULT 0,
     remark TEXT DEFAULT ''
@@ -227,7 +226,7 @@ CREATE TABLE IF NOT EXISTS inbound_orders (
     FOREIGN KEY (spec_id) REFERENCES specs(id)
 );
 
- CREATE TABLE IF NOT EXISTS outbound_orders (
+CREATE TABLE IF NOT EXISTS outbound_orders (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     order_no TEXT UNIQUE NOT NULL,
     date TEXT NOT NULL,

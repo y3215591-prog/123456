@@ -117,9 +117,6 @@ class OutboundDialog(QDialog):
         self._on_location_changed()
         self._on_qty_changed()
 
-    def _on_order_changed(self, text):
-        self._order_remaining_update(text)
-
     def _on_order_text_changed(self, text):
         self._order_timer.start()
 

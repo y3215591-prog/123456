@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import (
-    QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFileDialog, QMessageBox,
+    QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFileDialog,
     QComboBox,
 )
 from silicon_manganese_inventory.ui.base_page import BasePage

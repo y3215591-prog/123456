@@ -1,9 +1,9 @@
 import logging
 import os
 import sys
-import traceback
 from logging.handlers import RotatingFileHandler
 from datetime import datetime
+from silicon_manganese_inventory.config import APP_VERSION
 
 _logger = None
 
@@ -38,7 +38,7 @@ def get_logger(name="SiliconMnInventory"):
     _logger.addHandler(console_handler)
 
     _logger.info("=" * 60)
-    _logger.info(f"应用启动 v1.0.0")
+    _logger.info(f"应用启动 v{APP_VERSION}")
     _logger.info(f"日志目录: {log_dir}")
     return _logger
 

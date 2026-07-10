@@ -1,5 +1,8 @@
 from silicon_manganese_inventory.dao.database import DatabaseManager
 
+SEAL_ALLOWED = {"status", "pre_inbound_id", "inbound_id", "outbound_id",
+                "batch_no", "location_code", "batch_code"}
+
 
 class SealDAO:
     def __init__(self, db: DatabaseManager):
@@ -71,7 +74,7 @@ class SealDAO:
             conn.execute("DELETE FROM seal_numbers WHERE seal_batch_id=?", (batch_id,))
             conn.execute("DELETE FROM seal_batches WHERE id=?", (batch_id,))
 
-    def get_seals_by_batch(self, batch_id, status=None):
+    def get_seals_by_batch(self, batch_id, status=None, offset=0, limit=None):
         with self.db.get_connection() as conn:
             base_sql = (
                 "SELECT sn.*, sb.name AS batch_code, "
@@ -85,14 +88,23 @@ class SealDAO:
                 "LEFT JOIN outbound_orders oo ON sn.outbound_id=oo.id "
                 "WHERE sn.seal_batch_id=?"
             )
+            params = [batch_id]
+            count_sql = (
+                "SELECT COUNT(*) FROM seal_numbers sn WHERE sn.seal_batch_id=?"
+            )
+            count_params = [batch_id]
             if status:
-                return conn.execute(
-                    base_sql + " AND sn.status=? ORDER BY sn.seal_code",
-                    (batch_id, status),
-                ).fetchall()
-            return conn.execute(
-                base_sql + " ORDER BY sn.seal_code", (batch_id,)
-            ).fetchall()
+                count_sql += " AND sn.status=?"
+                count_params.append(status)
+                base_sql += " AND sn.status=?"
+                params.append(status)
+            if limit:
+                total = conn.execute(count_sql, count_params).fetchone()[0]
+                base_sql += " ORDER BY sn.seal_code LIMIT ? OFFSET ?"
+                params.extend([limit, offset])
+                return conn.execute(base_sql, params).fetchall(), total
+            base_sql += " ORDER BY sn.seal_code"
+            return conn.execute(base_sql, params).fetchall()
 
     def get_available_seals(self, batch_id, limit=None):
         with self.db.get_connection() as conn:
@@ -152,20 +164,30 @@ class SealDAO:
                    WHERE sn.status='shipped' ORDER BY sn.updated_at DESC"""
             ).fetchall()
 
-    def update_seal_status(self, seal_ids, new_status, **kwargs):
-        with self.db.get_connection() as conn:
-            now_sql = "datetime('now','localtime')"
-            for seal_id in seal_ids:
-                sets = ["status=?", "updated_at=" + now_sql]
-                params = [new_status]
-                for key, val in kwargs.items():
-                    sets.append(f"{key}=?")
-                    params.append(val)
-                params.append(seal_id)
-                conn.execute(
-                    f"UPDATE seal_numbers SET {', '.join(sets)} WHERE id=?",
-                    params,
+    def update_seal_status_batch(self, seal_ids, new_status, conn=None, **kwargs):
+        if not seal_ids:
+            return
+        safe_kwargs = {k: v for k, v in kwargs.items() if k in SEAL_ALLOWED}
+        setters = ["status=?", "updated_at=datetime('now','localtime')"]
+        values = [new_status]
+        for key, val in safe_kwargs.items():
+            setters.append(f"{key}=?")
+            values.append(val)
+        updates = [tuple(values + [sid]) for sid in seal_ids]
+        if conn is not None:
+            conn.executemany(
+                f"UPDATE seal_numbers SET {', '.join(setters)} WHERE id=?",
+                updates,
+            )
+        else:
+            with self.db.get_connection() as conn:
+                conn.executemany(
+                    f"UPDATE seal_numbers SET {', '.join(setters)} WHERE id=?",
+                    updates,
                 )
+
+    def update_seal_status(self, seal_ids, new_status, **kwargs):
+        self.update_seal_status_batch(seal_ids, new_status, **kwargs)
 
     def get_seal_by_code(self, seal_code):
         with self.db.get_connection() as conn:
@@ -196,7 +218,7 @@ class SealDAO:
     def import_range(self, start_int, end_int, batch_code=None):
         return self.create_batch(str(start_int), str(end_int), name=batch_code or "")
 
-    def list_all(self, status=None):
+    def list_all(self, status=None, offset=0, limit=None):
         base_sql = (
             "SELECT sn.*, sb.name AS batch_code, "
             "pio.order_no AS pre_inbound_order, "
@@ -209,11 +231,16 @@ class SealDAO:
             "LEFT JOIN outbound_orders oo ON sn.outbound_id=oo.id"
         )
         with self.db.get_connection() as conn:
+            count_sql = "SELECT COUNT(*) FROM seal_numbers sn"
+            params = []
             if status:
-                return conn.execute(
-                    base_sql + " WHERE sn.status=? ORDER BY sn.seal_code",
-                    (status,),
-                ).fetchall()
-            return conn.execute(
-                base_sql + " ORDER BY sn.seal_code"
-            ).fetchall()
+                count_sql += " WHERE sn.status=?"
+                base_sql += " WHERE sn.status=?"
+                params = [status]
+            if limit:
+                total = conn.execute(count_sql, params).fetchone()[0]
+                base_sql += " ORDER BY sn.seal_code LIMIT ? OFFSET ?"
+                params.extend([limit, offset])
+                return conn.execute(base_sql, params).fetchall(), total
+            base_sql += " ORDER BY sn.seal_code"
+            return conn.execute(base_sql, params).fetchall()

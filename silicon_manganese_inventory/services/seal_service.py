@@ -67,7 +67,7 @@ class SealService:
             extra["location_code"] = target_location
         self._transition(seal_ids, "in_stock", **extra)
 
-    def ship_seals(self, quantity, batch_no=None, location_code=None):
+    def ship_seals(self, quantity, batch_no=None, location_code=None, outbound_id=None):
         with self.db.get_connection() as conn:
             conditions = ["sn.status='in_stock'"]
             params = []
@@ -86,10 +86,9 @@ class SealService:
             seals = conn.execute(sql, params).fetchall()
         if len(seals) < quantity:
             raise SealInsufficientError(
-                f"库存不足：需要 {quantity} 吨，当前可用 {len(seals)} 吨")
+                f"库存不足：需要 {quantity} 个，当前可用 {len(seals)} 个")
         seal_ids = [s["id"] for s in seals]
-        self._transition(seal_ids, "shipped",
-                         outbound_id=0)
+        self._transition(seal_ids, "shipped", outbound_id=outbound_id)
         start = seals[0]["seal_code"]
         end = seals[-1]["seal_code"]
         return start, end, [s["seal_code"] for s in seals]
@@ -114,7 +113,7 @@ class SealService:
             seals = conn.execute(sql, params).fetchall()
         if len(seals) < quantity:
             raise SealInsufficientError(
-                f"库存不足：需要 {quantity} 吨，当前可用 {len(seals)} 吨")
+                f"库存不足：需要 {quantity} 个，当前可用 {len(seals)} 个")
         seal_ids = [s["id"] for s in seals]
         self._transition(seal_ids, "shipped", outbound_id=outbound_id)
         start = seals[0]["seal_code"]
@@ -122,15 +121,20 @@ class SealService:
         return start, end, [s["seal_code"] for s in seals]
 
     def _transition(self, seal_ids, new_status, **kwargs):
+        if not seal_ids:
+            return
         with self.db.get_connection() as conn:
+            placeholders = ",".join("?" * len(seal_ids))
+            rows = conn.execute(
+                f"SELECT id, status FROM seal_numbers WHERE id IN ({placeholders})",
+                seal_ids,
+            ).fetchall()
+            found = {row["id"]: row["status"] for row in rows}
             for seal_id in seal_ids:
-                row = conn.execute(
-                    "SELECT status FROM seal_numbers WHERE id=?", (seal_id,)
-                ).fetchone()
-                if not row:
+                current = found.get(seal_id)
+                if current is None:
                     raise SealStatusError(f"铅封号 {seal_id} 不存在")
-                current = row["status"]
                 if new_status not in ALLOWED_TRANSITIONS.get(current, []):
                     raise SealStatusError(
-                        f"不允许状态流转: {current} -> {new_status}")
-        self.dao.update_seal_status(seal_ids, new_status, **kwargs)
+                        f"不允许状态流转: {current} -> {new_status} (铅封号 {seal_id})")
+            self.dao.update_seal_status_batch(seal_ids, new_status, conn=conn, **kwargs)

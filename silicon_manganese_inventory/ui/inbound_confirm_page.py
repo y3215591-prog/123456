@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QLineEdit, QComboBox, QLabel, QHBoxLayout
+from PySide6.QtWidgets import QLineEdit, QComboBox
 from silicon_manganese_inventory.ui.base_page import BasePage
 from silicon_manganese_inventory.services.inbound_service import InboundService
 from silicon_manganese_inventory.dao.lab_dao import LabDAO
@@ -21,10 +21,10 @@ class InboundConfirmPage(BasePage):
         self.target_location_combo = QComboBox()
         self.target_location_combo.setEditable(True)
         loc_dao = LocationDAO(db)
-        for l in loc_dao.list():
-            if not l["code"].startswith("Z"):
+        for loc in loc_dao.list():
+            if not loc["code"].startswith("Z"):
                 self.target_location_combo.addItem(
-                    f"{l['code']} ({l['name']})", l["code"])
+                    f"{loc['code']} ({loc['name']})", loc["code"])
         jul_idx = self.target_location_combo.findData("A01-7月")
         if jul_idx >= 0:
             self.target_location_combo.setCurrentIndex(jul_idx)
@@ -44,7 +44,7 @@ class InboundConfirmPage(BasePage):
     def refresh(self):
         kwargs = {"lab_status": "tested"}
         if self.order_input.text():
-            kwargs["order_no"] = self.order_input.text()
+            kwargs["keyword"] = self.order_input.text()
         if self.batch_input.text():
             kwargs["batch_no"] = self.batch_input.text()
         rows = self.inbound_svc.list_pre_inbound(**kwargs)
@@ -72,8 +72,7 @@ class InboundConfirmPage(BasePage):
             return
         order_no = self.table.item(row, 0).text()
         dao = InboundDAO(self.db)
-        records = dao.list_pre_inbound()
-        record = next((r for r in records if r["order_no"] == order_no), None)
+        record = dao.get_pre_inbound_by_order_no(order_no)
         if not record:
             return
         if record["lab_status"] != "tested":
@@ -82,9 +81,11 @@ class InboundConfirmPage(BasePage):
         target = self.target_location_combo.currentData()
         if not target:
             target = self.target_location_combo.currentText().strip()
-        if target:
-            loc_dao = LocationDAO(self.db)
-            target = loc_dao.get_or_create(target)
+        if not target:
+            self.show_error("请选择或输入目标成品库位")
+            return
+        loc_dao = LocationDAO(self.db)
+        target = loc_dao.get_or_create(target)
         try:
             self.inbound_svc.confirm_inbound(record["id"], target_location=target)
         except ValueError as e:

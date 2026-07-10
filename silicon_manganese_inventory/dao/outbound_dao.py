@@ -72,4 +72,16 @@ class OutboundDAO:
 
     def delete_outbound(self, outbound_id):
         with self.db.get_connection() as conn:
+            order = conn.execute(
+                "SELECT quantity FROM outbound_orders WHERE id=?",
+                (outbound_id,)
+            ).fetchone()
+            if order and order["quantity"]:
+                conn.execute(
+                    """UPDATE seal_numbers SET status='in_stock', outbound_id=NULL,
+                       updated_at=datetime('now','localtime')
+                       WHERE outbound_id=? AND status='shipped'
+                       ORDER BY seal_code LIMIT ?""",
+                    (outbound_id, order["quantity"]),
+                )
             conn.execute("DELETE FROM outbound_orders WHERE id=?", (outbound_id,))

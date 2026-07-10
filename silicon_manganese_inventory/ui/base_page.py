@@ -118,7 +118,10 @@ class BasePage(QWidget):
             return
         self.table.horizontalHeader().setSectionResizeMode(
             QHeaderView.ResizeToContents)
-        QTimer.singleShot(200, self._initial_auto_fit_done)
+        self._auto_fit_timer = QTimer(self)
+        self._auto_fit_timer.setSingleShot(True)
+        self._auto_fit_timer.timeout.connect(self._initial_auto_fit_done)
+        self._auto_fit_timer.start(200)
 
     def _initial_auto_fit_done(self):
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)

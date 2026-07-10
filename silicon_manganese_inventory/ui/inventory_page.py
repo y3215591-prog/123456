@@ -1,8 +1,8 @@
-from PySide6.QtWidgets import QLineEdit, QComboBox, QLabel
+from PySide6.QtWidgets import QComboBox, QLabel
 from silicon_manganese_inventory.ui.base_page import BasePage
 from silicon_manganese_inventory.services.report_service import ReportService
 from silicon_manganese_inventory.services.excel_service import ExportService
-from silicon_manganese_inventory.dao.base_dao import SpecDAO, LocationDAO
+from silicon_manganese_inventory.dao.base_dao import LocationDAO
 
 
 class InventoryPage(BasePage):

@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QComboBox, QLineEdit, QMessageBox
+from PySide6.QtWidgets import QComboBox
 from PySide6.QtWidgets import QInputDialog
 from silicon_manganese_inventory.ui.base_page import BasePage
 from silicon_manganese_inventory.dao.base_dao import CustomerDAO, SupplierDAO

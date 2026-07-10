@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QLineEdit, QMessageBox
+from PySide6.QtWidgets import QLineEdit
 from silicon_manganese_inventory.ui.base_page import BasePage
 from silicon_manganese_inventory.ui.dialogs.daily_shipment_dialog import DailyShipmentDialog
 from silicon_manganese_inventory.services.report_service import ReportService
@@ -24,10 +24,11 @@ class DailyShipmentPage(BasePage):
         self.add_header_button("导出 Excel", self._export, "#2980b9")
 
         self.set_table_headers([
-            "序号", "发货日期", "车牌", "客户代码", "客户名称",
+            "ID", "序号", "发货日期", "车牌", "客户代码", "客户名称",
             "销售订单号", "物料名称", "规格", "批次号", "装车吨数",
             "毛重", "皮重", "净重", "收货净重", "铅封号", "备注",
         ])
+        self.table.setColumnHidden(0, True)
 
     def _do_search(self):
         self.refresh()
@@ -42,7 +43,7 @@ class DailyShipmentPage(BasePage):
         data = []
         for r in rows:
             data.append([
-                r.get("seq_no", ""), r.get("shipment_date", ""),
+                r.get("id", ""), r.get("seq_no", ""), r.get("shipment_date", ""),
                 r.get("plate_no", ""), r.get("customer_code", ""),
                 r.get("customer_name", ""), r.get("sales_order_no", ""),
                 r.get("material_name", ""), r.get("spec", ""),
@@ -63,9 +64,8 @@ class DailyShipmentPage(BasePage):
         if row < 0:
             self.show_error("请先选择一条记录")
             return
-        seq_no = self.table.item(row, 0).text()
-        rows = self.shipment_dao.list()
-        record = next((r for r in rows if str(r.get("seq_no")) == seq_no), None)
+        record_id = self.table.item(row, 0).text()
+        record = self.shipment_dao.get(int(record_id))
         if not record:
             self.show_error("未找到记录")
             return

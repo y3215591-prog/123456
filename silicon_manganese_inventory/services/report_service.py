@@ -19,8 +19,9 @@ class ReportService:
                 params.append(f"%{batch_no}%")
             sql = (
                 "SELECT sn.batch_no, sn.location_code, COUNT(*) AS balance, "
-                "pio.date AS last_inbound_date, lr.overall_result, "
-                "GROUP_CONCAT(DISTINCT sn.seal_code) AS seal_list "
+                "MAX(pio.date) AS last_inbound_date, lr.overall_result, "
+                "GROUP_CONCAT(DISTINCT sn.seal_code) AS seal_list, "
+                "MIN(sn.seal_code) AS seal_min, MAX(sn.seal_code) AS seal_max "
                 "FROM seal_numbers sn "
                 "JOIN pre_inbound_orders pio ON sn.pre_inbound_id=pio.id "
                 "LEFT JOIN lab_results lr ON pio.id=lr.pre_inbound_id "
@@ -28,7 +29,16 @@ class ReportService:
                 " GROUP BY sn.batch_no, sn.location_code "
                 "ORDER BY sn.batch_no, sn.location_code"
             )
-            return conn.execute(sql, params).fetchall()
+            rows = conn.execute(sql, params).fetchall()
+        results = []
+        for row in rows:
+            row_dict = dict(row)
+            seal_list = row_dict.get("seal_list", "") or ""
+            if seal_list and len(seal_list) > 200:
+                seal_list = seal_list[:200] + "..."
+            row_dict["seal_list"] = seal_list
+            results.append(row_dict)
+        return results
 
     def get_inventory_total(self):
         with self.db.get_connection() as conn:
@@ -44,7 +54,8 @@ class ReportService:
         with self.db.get_connection() as conn:
             rows = conn.execute(
                 """SELECT so.order_no, so.customer_code, so.customer_name,
-                   so.material_desc AS material_name, '10-60mm' AS spec,
+                   so.material_desc AS material_name,
+                   COALESCE(MIN(ds.spec), '') AS spec,
                    '吨' AS unit, so.quantity AS order_quantity,
                    so.delivery_end, so.pickup_method,
                    COALESCE(SUM(ds.load_quantity), 0) AS shipped_quantity,

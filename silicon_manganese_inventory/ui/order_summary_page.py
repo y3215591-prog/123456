@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QLineEdit, QComboBox
+from PySide6.QtWidgets import QLineEdit
 from silicon_manganese_inventory.ui.base_page import BasePage
 from silicon_manganese_inventory.services.report_service import ReportService
 from silicon_manganese_inventory.services.excel_service import ExportService
@@ -37,7 +37,7 @@ class OrderSummaryPage(BasePage):
                 f"{r['completion_rate'] * 100:.1f}%" if r.get("completion_rate") else "0%",
                 r["warning"] or "",
             ])
-        self.populate_table(data, highlight_col=7, highlight_threshold=1)
+        self.populate_table(data)
 
     def _export(self):
         export = ExportService(self.db)

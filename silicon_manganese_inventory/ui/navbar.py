@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel
-from PySide6.QtCore import Signal, Qt
+from PySide6.QtCore import Signal
 
 
 class NavBar(QWidget):
@@ -31,7 +31,9 @@ class NavBar(QWidget):
 
         for name, idx in self.items:
             btn = QPushButton(f"  {name}")
+            btn.setObjectName("navBtn")
             btn.setCheckable(True)
+            btn.setProperty("active", "false")
             btn.clicked.connect(lambda checked, i=idx: self._on_click(i))
             layout.addWidget(btn)
             self.buttons.append(btn)
@@ -42,5 +44,9 @@ class NavBar(QWidget):
 
     def _on_click(self, index):
         for i, btn in enumerate(self.buttons):
-            btn.setChecked(i == index)
+            checked = (i == index)
+            btn.setChecked(checked)
+            btn.setProperty("active", "true" if checked else "false")
+            btn.style().unpolish(btn)
+            btn.style().polish(btn)
         self.nav_changed.emit(index)

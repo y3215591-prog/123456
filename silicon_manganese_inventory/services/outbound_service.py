@@ -1,4 +1,3 @@
-from datetime import datetime
 from silicon_manganese_inventory.dao.database import DatabaseManager
 from silicon_manganese_inventory.dao.outbound_dao import OutboundDAO
 from silicon_manganese_inventory.services.seal_service import SealService
@@ -28,15 +27,19 @@ class OutboundService:
             quantity=quantity, operator=operator, remark=remark,
             contract_no=contract_no, plate_no=plate_no,
         )
-        seal_start, seal_end, seal_codes = self.seal_service.ship_seals_by_outbound(
-            outbound_id, quantity, batch_no=batch_no, location_code=location_code,
-        )
-        batch_nos = self._collect_batch_nos(seal_codes)
-        with self.db.get_connection() as conn:
-            conn.execute(
-                "UPDATE outbound_orders SET seal_start=?, seal_end=?, batch_nos=? WHERE id=?",
-                (seal_start, seal_end, batch_nos, outbound_id),
+        try:
+            seal_start, seal_end, seal_codes = self.seal_service.ship_seals_by_outbound(
+                outbound_id, quantity, batch_no=batch_no, location_code=location_code,
             )
+            batch_nos = self._collect_batch_nos(seal_codes)
+            with self.db.get_connection() as conn:
+                conn.execute(
+                    "UPDATE outbound_orders SET seal_start=?, seal_end=?, batch_nos=? WHERE id=?",
+                    (seal_start, seal_end, batch_nos, outbound_id),
+                )
+        except Exception:
+            self.outbound_dao.delete_outbound(outbound_id)
+            raise
         return outbound_id, order_no, seal_codes
 
     def _collect_batch_nos(self, seal_codes):

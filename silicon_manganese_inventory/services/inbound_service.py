@@ -22,13 +22,17 @@ class InboundService:
             spec_id=spec_id, location_code=location_code,
             seal_batch_id=seal_batch_id, operator=operator, remark=remark,
         )
-        seal_start, seal_end, seals = self.seal_service.assign_seals(
-            seal_batch_id, quantity, pre_inbound_id=pid,
-            batch_no=batch_no, location_code=location_code,
-        )
-        self.inbound_dao.update_pre_inbound(
-            pid, seal_start=seal_start, seal_end=seal_end,
-        )
+        try:
+            seal_start, seal_end, seals = self.seal_service.assign_seals(
+                seal_batch_id, quantity, pre_inbound_id=pid,
+                batch_no=batch_no, location_code=location_code,
+            )
+            self.inbound_dao.update_pre_inbound(
+                pid, seal_start=seal_start, seal_end=seal_end,
+            )
+        except Exception:
+            self.inbound_dao.delete_pre_inbound(pid)
+            raise
         return pid, seal_start, seal_end
 
     def cancel_pre_inbound(self, pre_inbound_id):
@@ -41,26 +45,27 @@ class InboundService:
         self.inbound_dao.delete_pre_inbound(pre_inbound_id)
 
     def confirm_inbound(self, pre_inbound_id, operator="", target_location=None):
-        row = self.inbound_dao.get_pre_inbound(pre_inbound_id)
-        if not row:
-            raise ValueError("预入库单不存在")
-        if row["lab_status"] != "tested":
-            raise ValueError("请先录入化验结果")
         with self.db.get_connection() as conn:
+            row = conn.execute(
+                "SELECT * FROM pre_inbound_orders WHERE id=?",
+                (pre_inbound_id,),
+            ).fetchone()
+            if not row:
+                raise ValueError("预入库单不存在")
             lab = conn.execute(
                 "SELECT overall_result FROM lab_results WHERE pre_inbound_id=?",
                 (pre_inbound_id,),
             ).fetchone()
-        if not lab:
-            raise ValueError("未找到化验结果")
-        if lab["overall_result"] != "合格":
-            raise ValueError("化验不合格，无法入库")
-        location = target_location or row["location_code"] or ""
-        inbound_id = self.inbound_dao.create_inbound(
-            pre_inbound_id, operator=operator,
-            date=datetime.now().strftime("%Y-%m-%d"),
-            location_code=location,
-        )
+            if not lab or not lab["overall_result"]:
+                raise ValueError("化验结果尚未判定，无法入库")
+            if lab["overall_result"] != "合格":
+                raise ValueError("化验不合格，无法入库")
+            location = target_location or row["location_code"] or ""
+            inbound_id = self.inbound_dao.create_inbound(
+                pre_inbound_id, conn=conn, operator=operator,
+                date=datetime.now().strftime("%Y-%m-%d"),
+                location_code=location,
+            )
         self.seal_service.confirm_seals(pre_inbound_id, inbound_id,
                                         target_location=location)
         return inbound_id

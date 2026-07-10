@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QLineEdit, QMessageBox
+from PySide6.QtWidgets import QLineEdit
 from silicon_manganese_inventory.ui.base_page import BasePage
 from silicon_manganese_inventory.ui.dialogs.outbound_dialog import OutboundDialog
 from silicon_manganese_inventory.services.outbound_service import OutboundService
@@ -39,9 +39,28 @@ class OutboundPage(BasePage):
         if self.date_to.text():
             kwargs["date_to"] = self.date_to.text()
         rows = self.outbound_svc.list_outbound(**kwargs)
+
+        order_nos = [r["sales_order_no"] for r in rows if r["sales_order_no"]]
+        order_remaining = {}
+        if order_nos:
+            with self.db.get_connection() as conn:
+                placeholders = ",".join("?" * len(order_nos))
+                orders = conn.execute(
+                    f"SELECT so.order_no, so.quantity, "
+                    f"COALESCE(SUM(ds.load_quantity), 0) AS shipped "
+                    f"FROM sales_orders so "
+                    f"LEFT JOIN daily_shipments ds ON so.order_no=ds.sales_order_no "
+                    f"WHERE so.order_no IN ({placeholders}) "
+                    f"GROUP BY so.order_no",
+                    order_nos,
+                ).fetchall()
+                for o in orders:
+                    rem = (o["quantity"] or 0) - (o["shipped"] or 0)
+                    order_remaining[o["order_no"]] = f"余{rem}吨" if rem > 0 else "已完成"
+
         data = []
         for r in rows:
-            remaining = self._get_order_remaining(r["sales_order_no"]) if r["sales_order_no"] else ""
+            remaining = order_remaining.get(r["sales_order_no"], "") if r["sales_order_no"] else ""
             data.append([
                 r["order_no"], r["date"], r.get("batch_nos", ""),
                 r.get("spec_name", "") or "",
@@ -52,25 +71,6 @@ class OutboundPage(BasePage):
                 remaining,
             ])
         self.populate_table(data)
-
-    def _get_order_remaining(self, order_no):
-        if not order_no:
-            return ""
-        with self.db.get_connection() as conn:
-            order_row = conn.execute(
-                "SELECT quantity FROM sales_orders WHERE order_no=?",
-                (order_no,),
-            ).fetchone()
-            if not order_row:
-                return ""
-            ordered = order_row["quantity"] or 0
-            shipped_row = conn.execute(
-                "SELECT COALESCE(SUM(quantity), 0) FROM outbound_orders WHERE sales_order_no=?",
-                (order_no,),
-            ).fetchone()
-            shipped = shipped_row[0] if shipped_row else 0
-            remaining = ordered - shipped
-            return f"余{remaining}吨" if remaining > 0 else "已完成"
 
     def _add_outbound(self):
         dlg = OutboundDialog(self.db, self)

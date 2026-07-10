@@ -41,7 +41,7 @@ class LabService:
     def _judge_element(self, element, value):
         if value is None:
             return ""
-        standards = self.dao.get_standards()
+        standards = self._get_standards()
         std = next((s for s in standards if s["element"] == element), None)
         if not std:
             return ""
@@ -74,3 +74,4 @@ class LabService:
 
     def update_standard(self, element, min_value, max_value, remark=""):
         self.dao.update_standard(element, min_value, max_value, remark)
+        self._standards = None

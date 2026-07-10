@@ -1,5 +1,4 @@
-from PySide6.QtWidgets import QLineEdit
-from datetime import datetime
+from PySide6.QtWidgets import QLineEdit, QMessageBox
 from silicon_manganese_inventory.ui.base_page import BasePage
 from silicon_manganese_inventory.ui.dialogs.pre_inbound_dialog import PreInboundDialog
 from silicon_manganese_inventory.ui.dialogs.lab_result_dialog import LabResultDialog
@@ -74,8 +73,7 @@ class PreInboundPage(BasePage):
         order_no = self.table.item(row, 0).text()
         from silicon_manganese_inventory.dao.inbound_dao import InboundDAO
         dao = InboundDAO(self.db)
-        records = dao.list_pre_inbound()
-        record = next((r for r in records if r["order_no"] == order_no), None)
+        record = dao.get_pre_inbound_by_order_no(order_no)
         if not record:
             return
         if record["lab_status"] == "tested":
@@ -93,9 +91,14 @@ class PreInboundPage(BasePage):
         order_no = self.table.item(row, 0).text()
         from silicon_manganese_inventory.dao.inbound_dao import InboundDAO
         dao = InboundDAO(self.db)
-        records = dao.list_pre_inbound()
-        record = next((r for r in records if r["order_no"] == order_no), None)
+        record = dao.get_pre_inbound_by_order_no(order_no)
         if not record:
+            return
+        reply = QMessageBox.question(
+            self, "确认作废", f"确定要作废预入库单 {order_no} 吗？",
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.No,
+        )
+        if reply != QMessageBox.Yes:
             return
         try:
             self.inbound_svc.cancel_pre_inbound(record["id"])
@@ -113,8 +116,7 @@ class PreInboundPage(BasePage):
         order_no = self.table.item(row, 0).text()
         from silicon_manganese_inventory.dao.inbound_dao import InboundDAO
         dao = InboundDAO(self.db)
-        records = dao.list_pre_inbound()
-        record = next((r for r in records if r["order_no"] == order_no), None)
+        record = dao.get_pre_inbound_by_order_no(order_no)
         if not record:
             return
         dlg = LabResultDialog(self.db, record["id"], self)

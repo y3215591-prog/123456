@@ -1,7 +1,18 @@
 from silicon_manganese_inventory.dao.database import DatabaseManager
 
 
+def _safe_update(conn, table, record_id, allowed_columns, **kwargs):
+    safe = {k: v for k, v in kwargs.items() if k in allowed_columns}
+    if not safe:
+        return
+    sets = [f"{k}=?" for k in safe]
+    params = list(safe.values()) + [record_id]
+    conn.execute(f"UPDATE {table} SET {', '.join(sets)} WHERE id=?", params)
+
+
 class CustomerDAO:
+    _ALLOWED = {"code", "name", "contact_person", "contact_phone", "address", "remark"}
+
     def __init__(self, db: DatabaseManager):
         self.db = db
 
@@ -16,10 +27,8 @@ class CustomerDAO:
             return cursor.lastrowid
 
     def update(self, customer_id, **kwargs):
-        sets = [f"{k}=?" for k in kwargs]
-        params = list(kwargs.values()) + [customer_id]
         with self.db.get_connection() as conn:
-            conn.execute(f"UPDATE customers SET {', '.join(sets)} WHERE id=?", params)
+            _safe_update(conn, "customers", customer_id, self._ALLOWED, **kwargs)
 
     def delete(self, customer_id):
         with self.db.get_connection() as conn:
@@ -45,6 +54,8 @@ class CustomerDAO:
 
 
 class SupplierDAO:
+    _ALLOWED = {"code", "name", "contact_person", "contact_phone", "address", "remark"}
+
     def __init__(self, db: DatabaseManager):
         self.db = db
 
@@ -59,10 +70,8 @@ class SupplierDAO:
             return cursor.lastrowid
 
     def update(self, supplier_id, **kwargs):
-        sets = [f"{k}=?" for k in kwargs]
-        params = list(kwargs.values()) + [supplier_id]
         with self.db.get_connection() as conn:
-            conn.execute(f"UPDATE suppliers SET {', '.join(sets)} WHERE id=?", params)
+            _safe_update(conn, "suppliers", supplier_id, self._ALLOWED, **kwargs)
 
     def delete(self, supplier_id):
         with self.db.get_connection() as conn:
@@ -84,6 +93,8 @@ class SupplierDAO:
 
 
 class LocationDAO:
+    _ALLOWED = {"code", "name", "warehouse_id", "remark"}
+
     def __init__(self, db: DatabaseManager):
         self.db = db
 
@@ -96,11 +107,17 @@ class LocationDAO:
             return cursor.lastrowid
 
     def get_or_create(self, code, warehouse_id=1):
-        row = self.get_by_code(code)
-        if row:
-            return row["code"]
-        self.create(code, name=f"{code}库位", warehouse_id=warehouse_id)
-        return code
+        with self.db.get_connection() as conn:
+            row = conn.execute(
+                "SELECT * FROM locations WHERE code=?", (code,)
+            ).fetchone()
+            if row:
+                return row["code"]
+            conn.execute(
+                "INSERT OR IGNORE INTO locations (code, name, warehouse_id) VALUES (?, ?, ?)",
+                (code, f"{code}库位", warehouse_id),
+            )
+            return code
 
     def get_by_code(self, code):
         with self.db.get_connection() as conn:
@@ -109,10 +126,8 @@ class LocationDAO:
             ).fetchone()
 
     def update(self, location_id, **kwargs):
-        sets = [f"{k}=?" for k in kwargs]
-        params = list(kwargs.values()) + [location_id]
         with self.db.get_connection() as conn:
-            conn.execute(f"UPDATE locations SET {', '.join(sets)} WHERE id=?", params)
+            _safe_update(conn, "locations", location_id, self._ALLOWED, **kwargs)
 
     def delete(self, location_id):
         with self.db.get_connection() as conn:
@@ -163,6 +178,8 @@ class LocationDAO:
 
 
 class SpecDAO:
+    _ALLOWED = {"name", "mn_content", "si_content", "remark"}
+
     def __init__(self, db: DatabaseManager):
         self.db = db
 
@@ -175,10 +192,8 @@ class SpecDAO:
             return cursor.lastrowid
 
     def update(self, spec_id, **kwargs):
-        sets = [f"{k}=?" for k in kwargs]
-        params = list(kwargs.values()) + [spec_id]
         with self.db.get_connection() as conn:
-            conn.execute(f"UPDATE specs SET {', '.join(sets)} WHERE id=?", params)
+            _safe_update(conn, "specs", spec_id, self._ALLOWED, **kwargs)
 
     def delete(self, spec_id):
         with self.db.get_connection() as conn:
@@ -210,6 +225,8 @@ class SpecDAO:
 
 
 class WarehouseDAO:
+    _ALLOWED = {"name", "address", "remark"}
+
     def __init__(self, db: DatabaseManager):
         self.db = db
 
@@ -222,10 +239,8 @@ class WarehouseDAO:
             return cursor.lastrowid
 
     def update(self, warehouse_id, **kwargs):
-        sets = [f"{k}=?" for k in kwargs]
-        params = list(kwargs.values()) + [warehouse_id]
         with self.db.get_connection() as conn:
-            conn.execute(f"UPDATE warehouses SET {', '.join(sets)} WHERE id=?", params)
+            _safe_update(conn, "warehouses", warehouse_id, self._ALLOWED, **kwargs)
 
     def delete(self, warehouse_id):
         with self.db.get_connection() as conn:
@@ -296,6 +311,12 @@ class SalesOrderDAO:
 
 
 class DailyShipmentDAO:
+    _ALLOWED = {"seq_no", "shipment_date", "plate_no", "customer_code",
+                "customer_name", "sales_order_no", "material_name", "spec",
+                "batch_no", "load_quantity", "gross_weight", "tare_weight",
+                "net_weight", "customer_received_weight", "seal_codes", "remark",
+                "outbound_id"}
+
     def __init__(self, db: DatabaseManager):
         self.db = db
 
@@ -322,10 +343,8 @@ class DailyShipmentDAO:
             return cursor.lastrowid
 
     def update(self, shipment_id, **kwargs):
-        sets = [f"{k}=?" for k in kwargs]
-        params = list(kwargs.values()) + [shipment_id]
         with self.db.get_connection() as conn:
-            conn.execute(f"UPDATE daily_shipments SET {', '.join(sets)} WHERE id=?", params)
+            _safe_update(conn, "daily_shipments", shipment_id, self._ALLOWED, **kwargs)
 
     def delete(self, shipment_id):
         with self.db.get_connection() as conn:
