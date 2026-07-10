@@ -42,15 +42,38 @@ class CustomerDAO:
         with self.db.get_connection() as conn:
             return conn.execute("SELECT * FROM customers WHERE code=?", (code,)).fetchone()
 
-    def list(self, keyword=None):
+    def get_by_name(self, name):
+        with self.db.get_connection() as conn:
+            return conn.execute("SELECT * FROM customers WHERE name=?", (name,)).fetchone()
+
+    def list(self, keyword=None, archived_only=False):
         with self.db.get_connection() as conn:
             if keyword:
                 kw = f"%{keyword}%"
+                if archived_only:
+                    return conn.execute(
+                        "SELECT * FROM customers WHERE is_archived=1 AND (name LIKE ? OR code LIKE ?) ORDER BY code",
+                        (kw, kw),
+                    ).fetchall()
                 return conn.execute(
-                    "SELECT * FROM customers WHERE name LIKE ? OR code LIKE ? ORDER BY code",
+                    "SELECT * FROM customers WHERE is_archived=0 AND (name LIKE ? OR code LIKE ?) ORDER BY code",
                     (kw, kw),
                 ).fetchall()
-            return conn.execute("SELECT * FROM customers ORDER BY code").fetchall()
+            if archived_only:
+                return conn.execute(
+                    "SELECT * FROM customers WHERE is_archived=1 ORDER BY code"
+                ).fetchall()
+            return conn.execute(
+                "SELECT * FROM customers WHERE is_archived=0 ORDER BY code"
+            ).fetchall()
+
+    def archive(self, customer_id):
+        with self.db.get_connection() as conn:
+            conn.execute("UPDATE customers SET is_archived=1 WHERE id=?", (customer_id,))
+
+    def unarchive(self, customer_id):
+        with self.db.get_connection() as conn:
+            conn.execute("UPDATE customers SET is_archived=0 WHERE id=?", (customer_id,))
 
 
 class SupplierDAO:
@@ -384,3 +407,28 @@ class DailyShipmentDAO:
         with self.db.get_connection() as conn:
             row = conn.execute("SELECT MAX(seq_no) FROM daily_shipments").fetchone()
             return row[0] or 0
+
+
+class OperationLogDAO:
+    def __init__(self, db: DatabaseManager):
+        self.db = db
+
+    def log(self, operation_type, target_table="", target_id=None,
+            detail="", operator=""):
+        with self.db.get_connection() as conn:
+            conn.execute(
+                "INSERT INTO operation_logs (operation_type, target_table, target_id, detail, operator) VALUES (?, ?, ?, ?, ?)",
+                (operation_type, target_table, target_id, detail, operator),
+            )
+
+    def list(self, operation_type=None, limit=200):
+        with self.db.get_connection() as conn:
+            if operation_type:
+                return conn.execute(
+                    "SELECT * FROM operation_logs WHERE operation_type=? ORDER BY id DESC LIMIT ?",
+                    (operation_type, limit),
+                ).fetchall()
+            return conn.execute(
+                "SELECT * FROM operation_logs ORDER BY id DESC LIMIT ?",
+                (limit,),
+            ).fetchall()

@@ -42,7 +42,7 @@ class InboundConfirmPage(BasePage):
         self.refresh()
 
     def refresh(self):
-        kwargs = {"lab_status": "tested"}
+        kwargs = {"lab_status": "tested", "inbound_status": "unconfirmed"}
         if self.order_input.text():
             kwargs["keyword"] = self.order_input.text()
         if self.batch_input.text():

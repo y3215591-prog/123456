@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QWidget
 from PySide6.QtCore import QSettings
-from silicon_manganese_inventory.utils.themes import THEMES, DEFAULT_THEME, FROSTED_BASE, FROSTED_CARD, NAVBAR_STYLE
+from silicon_manganese_inventory.utils.themes import THEMES, DEFAULT_THEME, EAS_BASE, EAS_CARD, EAS_NAVBAR, EAS_DIALOG
 
 
 class ThemeManager:
@@ -32,35 +32,23 @@ class ThemeManager:
         self._theme = THEMES[key]
         self._settings.setValue("theme", key)
 
-    def hex_to_rgb(self, hex_color):
-        h = hex_color.lstrip("#")
-        return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
-
     def apply_global(self, app=None):
         t = self._theme
-        r, g, b = self.hex_to_rgb(t["accent"])
-        qss = FROSTED_BASE.format(
-            bg=t["bg"], card=t["card"], table_header=t["table_header"],
-            text_primary=t["text_primary"], text_secondary=t["text_secondary"],
-            accent=t["accent"], accent_r=r, accent_g=g, accent_b=b,
-        )
+        qss = EAS_BASE.format(**t)
         if app:
             app.setStyleSheet(qss)
         return qss
 
-    def frosted_card_style(self):
-        return FROSTED_CARD.format(card=self._theme["card"])
+    def card_style(self):
+        return EAS_CARD.format(**self._theme)
 
     def navbar_style(self):
-        t = self._theme
-        r, g, b = self.hex_to_rgb(t["accent"])
-        return NAVBAR_STYLE.format(
-            sidebar=t["sidebar"], text_primary=t["text_primary"],
-            accent=t["accent"], accent_r=r, accent_g=g, accent_b=b,
-        )
+        return EAS_NAVBAR.format(**self._theme)
+
+    def dialog_style(self):
+        return EAS_DIALOG.format(**self._theme)
 
 
 def apply_frosted(widget: QWidget):
     tm = ThemeManager.instance()
-    widget.setAttribute(0x0002, False)  # 保持透明度
-    widget.setStyleSheet(widget.styleSheet() + tm.frosted_card_style())
+    widget.setStyleSheet(widget.styleSheet() + tm.card_style())

@@ -1,14 +1,24 @@
-from PySide6.QtWidgets import QComboBox, QLabel
+from PySide6.QtWidgets import QComboBox, QLabel, QTableWidgetItem, QHeaderView
+from PySide6.QtCore import Qt
 from silicon_manganese_inventory.ui.base_page import BasePage
 from silicon_manganese_inventory.services.report_service import ReportService
 from silicon_manganese_inventory.services.excel_service import ExportService
 from silicon_manganese_inventory.dao.base_dao import LocationDAO
+from silicon_manganese_inventory.ui.dialogs.location_detail_dialog import (
+    LocationDetailDialog,
+)
+from silicon_manganese_inventory.ui.dialogs.seal_list_dialog import SealListDialog
+from silicon_manganese_inventory.utils.preferences import UIPreferences
 
 
 class InventoryPage(BasePage):
+    LOCATION_COL = 1
+    SEAL_COL = 5
+
     def __init__(self, db):
         super().__init__(db, "成品库存")
         self.report_svc = ReportService(db)
+        self._prefs = UIPreferences()
 
         self.location_combo = QComboBox()
         self.location_combo.addItem("全部", None)
@@ -26,6 +36,8 @@ class InventoryPage(BasePage):
         self.set_table_headers([
             "批次号", "库位", "结存(吨)", "最近入库日期", "化验结果", "铅封号明细",
         ])
+        self.table.cellClicked.connect(self._on_cell_clicked)
+        self._seal_data = {}
 
     def _do_search(self):
         self.refresh()
@@ -35,13 +47,59 @@ class InventoryPage(BasePage):
         rows = self.report_svc.get_inventory_report(location_code=location)
         total = sum(r["balance"] or 0 for r in rows)
         self.total_label.setText(f"库存总计: {total} 吨")
+        self._seal_data = {}
         data = []
-        for r in rows:
+        for r_idx, r in enumerate(rows):
+            location_code = r["location_code"] or ""
+            seal_list = r.get("seal_list", "") or ""
+            seal_min = r.get("seal_min", "")
+            seal_max = r.get("seal_max", "")
+            balance = r["balance"]
+            if seal_list:
+                self._seal_data[r_idx] = seal_list
+                display = f"{seal_min}~{seal_max} ({balance}个)"
+            else:
+                display = ""
             data.append([
-                r["batch_no"], r["location_code"] or "", r["balance"],
-                r["last_inbound_date"], r["overall_result"] or "", r["seal_list"] or "",
+                r["batch_no"], location_code, balance,
+                r["last_inbound_date"], r["overall_result"] or "", display,
             ])
         self.populate_table(data, highlight_col=2, highlight_threshold=100)
+
+    def populate_table(self, rows, highlight_col=None, highlight_threshold=None):
+        super().populate_table(rows, highlight_col, highlight_threshold)
+        header = self.table.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.Interactive)
+        header.resizeSections(QHeaderView.ResizeToContents)
+
+        for r in range(len(rows)):
+            loc_item = self.table.item(r, self.LOCATION_COL)
+            if loc_item and loc_item.text():
+                loc_item.setForeground(Qt.blue)
+                loc_item.setToolTip("点击查看库位详情")
+                font = loc_item.font()
+                font.setUnderline(True)
+                loc_item.setFont(font)
+
+            seal_item = self.table.item(r, self.SEAL_COL)
+            if seal_item and seal_item.text():
+                seal_item.setForeground(Qt.blue)
+                seal_item.setToolTip("点击查看完整铅封号列表")
+                font = seal_item.font()
+                font.setUnderline(True)
+                seal_item.setFont(font)
+
+    def _on_cell_clicked(self, row, col):
+        if col == self.LOCATION_COL:
+            item = self.table.item(row, col)
+            if item and item.text().strip():
+                location_code = item.text().strip()
+                dlg = LocationDetailDialog(self.db, location_code, self)
+                dlg.exec()
+        elif col == self.SEAL_COL:
+            if row in self._seal_data:
+                dlg = SealListDialog(self._seal_data[row], self)
+                dlg.exec()
 
     def _export(self):
         export = ExportService(self.db)

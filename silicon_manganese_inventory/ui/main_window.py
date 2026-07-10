@@ -56,7 +56,7 @@ class MainWindow(QMainWindow):
         layout.setSpacing(0)
 
         self.navbar = NavBar(self.NAV_ITEMS)
-        self.navbar.setFixedWidth(170)
+        self.navbar.setFixedWidth(180)
         self.navbar.setObjectName("navBar")
         layout.addWidget(self.navbar)
 
@@ -64,12 +64,13 @@ class MainWindow(QMainWindow):
         right_side.setContentsMargins(0, 0, 0, 0)
         right_side.setSpacing(0)
 
-        top_bar = QHBoxLayout()
-        top_bar.setContentsMargins(16, 8, 16, 8)
-        top_bar.addStretch()
+        top_bar = QWidget()
+        top_bar.setStyleSheet("background: #FFFFFF; border-bottom: 1px solid #E2E8F0;")
+        top_layout = QHBoxLayout(top_bar)
+        top_layout.setContentsMargins(16, 4, 16, 4)
 
         theme_lbl = QLabel("主题:")
-        theme_lbl.setStyleSheet("font-size: 12px;")
+        theme_lbl.setStyleSheet("font-size: 12px; color: #6B7280; border: none; background: transparent;")
         self.theme_combo = QComboBox()
         self.theme_combo.setFixedWidth(100)
         for key, t in THEMES.items():
@@ -79,12 +80,14 @@ class MainWindow(QMainWindow):
         if idx >= 0:
             self.theme_combo.setCurrentIndex(idx)
         self.theme_combo.currentIndexChanged.connect(self._on_theme_changed)
-        top_bar.addWidget(theme_lbl)
-        top_bar.addWidget(self.theme_combo)
-        right_side.addLayout(top_bar)
+        top_layout.addStretch()
+        top_layout.addWidget(theme_lbl)
+        top_layout.addWidget(self.theme_combo)
+        right_side.addWidget(top_bar)
 
         self.stack = QStackedWidget()
         self.stack.setObjectName("contentArea")
+        self.stack.setStyleSheet("background: #F5F7FA; border: none;")
         right_side.addWidget(self.stack)
 
         layout.addLayout(right_side)
@@ -114,7 +117,6 @@ class MainWindow(QMainWindow):
         t = self._tm.current
         nav_style = self._tm.navbar_style()
         self.navbar.setStyleSheet(nav_style)
-        self.stack.setStyleSheet(f"background: {t['bg']}; border: none;")
 
     def _on_theme_changed(self):
         key = self.theme_combo.currentData()

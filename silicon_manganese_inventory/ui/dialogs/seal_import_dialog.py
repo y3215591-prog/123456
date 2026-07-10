@@ -1,45 +1,34 @@
-from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QFormLayout, QLineEdit,
-    QPushButton, QMessageBox,
-)
+from PySide6.QtWidgets import QLineEdit, QMessageBox
 from silicon_manganese_inventory.dao.seal_dao import SealDAO
+from silicon_manganese_inventory.ui.dialogs.base_eas_dialog import BaseEasDialog
 
 
-class SealImportDialog(QDialog):
+class SealImportDialog(BaseEasDialog):
     def __init__(self, db, parent=None):
-        super().__init__(parent)
+        super().__init__(title="导入铅封号段", width=420, height=300, parent=parent)
         self.db = db
-        self.setWindowTitle("导入铅封号段")
-        self.setMinimumWidth(400)
         self._setup_ui()
 
     def _setup_ui(self):
-        layout = QVBoxLayout(self)
-        form = QFormLayout()
+        card, cl = self.add_card()
 
         self.start_input = QLineEdit()
         self.start_input.setPlaceholderText("起始编号（纯数字）")
-        form.addRow("起始编号 *:", self.start_input)
+        self.style_input(self.start_input)
+        self.add_form_row("起始编号 *:", self.start_input, cl)
 
         self.end_input = QLineEdit()
         self.end_input.setPlaceholderText("结束编号（纯数字）")
-        form.addRow("结束编号 *:", self.end_input)
+        self.style_input(self.end_input)
+        self.add_form_row("结束编号 *:", self.end_input, cl)
 
         self.batch_input = QLineEdit()
         self.batch_input.setPlaceholderText("如无则自动生成")
-        form.addRow("号段批次:", self.batch_input)
+        self.style_input(self.batch_input)
+        self.add_form_row("号段批次:", self.batch_input, cl)
 
-        layout.addLayout(form)
-
-        btn_layout = QVBoxLayout()
-        save_btn = QPushButton("导入")
-        save_btn.setStyleSheet("background-color: #27ae60; color: white; padding: 8px 24px;")
-        save_btn.clicked.connect(self._import)
-        cancel_btn = QPushButton("取消")
-        cancel_btn.clicked.connect(self.reject)
-        btn_layout.addWidget(save_btn)
-        btn_layout.addWidget(cancel_btn)
-        layout.addLayout(btn_layout)
+        self.add_primary_button("导入", self._import, "#16A34A")
+        self.add_cancel_button()
 
     def _import(self):
         start = self.start_input.text().strip()

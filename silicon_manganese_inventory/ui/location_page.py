@@ -37,7 +37,7 @@ class LocationPage(BasePage):
             stock = self.loc_dao.get_available_qty(loc["code"])
             loc_type = "自然块" if loc["code"].startswith("Z") else "成品"
             data.append([
-                l["code"], l["name"] or "", loc_type, stock,
+                loc["code"], loc["name"] or "", loc_type, stock,
             ])
             total_count += 1
             total_stock += stock

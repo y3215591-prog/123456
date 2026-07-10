@@ -82,3 +82,7 @@ class LabDAO:
                     "INSERT INTO lab_standards (element, min_value, max_value, remark) VALUES (?, ?, ?, ?)",
                     (element, min_value, max_value, remark),
                 )
+
+    def delete_standard(self, standard_id):
+        with self.db.get_connection() as conn:
+            conn.execute("DELETE FROM lab_standards WHERE id=?", (standard_id,))

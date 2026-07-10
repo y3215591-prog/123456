@@ -71,34 +71,43 @@ class InboundDAO:
             conn.execute("DELETE FROM pre_inbound_orders WHERE id=?", (pre_id,))
 
     def list_pre_inbound(self, date_from=None, date_to=None, batch_no=None,
-                         location_code=None, lab_status=None, keyword=None):
+                         location_code=None, lab_status=None, keyword=None,
+                         inbound_status=None):
         with self.db.get_connection() as conn:
             conditions = []
             params = []
             if date_from:
-                conditions.append("date>=?")
+                conditions.append("pio.date>=?")
                 params.append(date_from)
             if date_to:
-                conditions.append("date<=?")
+                conditions.append("pio.date<=?")
                 params.append(date_to)
             if batch_no:
-                conditions.append("batch_no LIKE ?")
+                conditions.append("pio.batch_no LIKE ?")
                 params.append(f"%{batch_no}%")
             if location_code:
-                conditions.append("location_code LIKE ?")
+                conditions.append("pio.location_code LIKE ?")
                 params.append(f"%{location_code}%")
             if lab_status:
-                conditions.append("lab_status=?")
+                conditions.append("pio.lab_status=?")
                 params.append(lab_status)
+            if inbound_status == "confirmed":
+                conditions.append("io.id IS NOT NULL")
+            elif inbound_status == "unconfirmed":
+                conditions.append("io.id IS NULL")
             if keyword:
                 conditions.append(
-                    "(order_no LIKE ? OR seal_start LIKE ? OR seal_end LIKE ?)")
+                    "(pio.order_no LIKE ? OR pio.seal_start LIKE ? OR pio.seal_end LIKE ?)")
                 kw = f"%{keyword}%"
                 params.extend([kw, kw, kw])
-            sql = "SELECT * FROM pre_inbound_orders"
+            sql = (
+                "SELECT pio.*, CASE WHEN io.id IS NOT NULL THEN 'confirmed' ELSE 'unconfirmed' END AS inbound_status "
+                "FROM pre_inbound_orders pio "
+                "LEFT JOIN inbound_orders io ON pio.id = io.pre_inbound_id"
+            )
             if conditions:
                 sql += " WHERE " + " AND ".join(conditions)
-            sql += " ORDER BY date DESC, id DESC"
+            sql += " ORDER BY pio.date DESC, pio.id DESC"
             return conn.execute(sql, params).fetchall()
 
     def create_inbound(self, pre_inbound_id, conn=None, **kwargs):

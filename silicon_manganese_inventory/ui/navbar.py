@@ -1,5 +1,6 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel, QSpacerItem, QSizePolicy
 from PySide6.QtCore import Signal
+from PySide6.QtCore import Qt
 
 
 class NavBar(QWidget):
@@ -7,6 +8,7 @@ class NavBar(QWidget):
 
     def __init__(self, items):
         super().__init__()
+        self.setObjectName("navBar")
         self.items = items
         self.buttons = []
         self._setup_ui()
@@ -15,24 +17,20 @@ class NavBar(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
-        self.setStyleSheet("""
-            NavBar { background-color: #2c3e50; }
-            QPushButton {
-                color: #bdc3c7; background: transparent; border: none;
-                padding: 14px 12px; text-align: left; font-size: 14px;
-            }
-            QPushButton:hover { background-color: #34495e; color: #ecf0f1; }
-            QPushButton:checked { background-color: #3498db; color: white; font-weight: bold; }
-        """)
 
-        title = QLabel("导航菜单")
-        title.setStyleSheet("color: #ecf0f1; font-size: 15px; font-weight: bold; padding: 16px 12px 8px 12px;")
+        title = QLabel("硅锰合金库存管理系统")
+        title.setObjectName("navTitle")
+        title.setWordWrap(True)
         layout.addWidget(title)
+
+        spacer = QSpacerItem(20, 12, QSizePolicy.Minimum, QSizePolicy.Fixed)
+        layout.addItem(spacer)
 
         for name, idx in self.items:
             btn = QPushButton(f"  {name}")
             btn.setObjectName("navBtn")
             btn.setCheckable(True)
+            btn.setCursor(Qt.PointingHandCursor)
             btn.setProperty("active", "false")
             btn.clicked.connect(lambda checked, i=idx: self._on_click(i))
             layout.addWidget(btn)
@@ -41,6 +39,9 @@ class NavBar(QWidget):
         layout.addStretch()
         if self.buttons:
             self.buttons[0].setChecked(True)
+            self.buttons[0].setProperty("active", "true")
+            self.buttons[0].style().unpolish(self.buttons[0])
+            self.buttons[0].style().polish(self.buttons[0])
 
     def _on_click(self, index):
         for i, btn in enumerate(self.buttons):

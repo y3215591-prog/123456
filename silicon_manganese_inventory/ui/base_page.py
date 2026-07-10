@@ -4,9 +4,10 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QTimer
 from silicon_manganese_inventory.utils.preferences import UIPreferences
-
+from silicon_manganese_inventory.utils.theme_manager import ThemeManager
 
 _prefs = UIPreferences()
+_tm = ThemeManager.instance()
 
 
 class BasePage(QWidget):
@@ -22,20 +23,33 @@ class BasePage(QWidget):
 
     def _setup_ui(self):
         self.main_layout = QVBoxLayout(self)
-        self.main_layout.setContentsMargins(16, 12, 16, 12)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
 
-        header = QHBoxLayout()
+        self.top_bar = QWidget()
+        self.top_bar.setStyleSheet("background: #FFFFFF; border-bottom: 1px solid #E2E8F0;")
+        top_layout = QHBoxLayout(self.top_bar)
+        top_layout.setContentsMargins(16, 8, 16, 8)
+
         title_lbl = QLabel(self.title)
-        title_lbl.setStyleSheet("font-size: 18px; font-weight: bold; color: #2c3e50;")
-        header.addWidget(title_lbl)
-        header.addStretch()
+        title_lbl.setStyleSheet("font-size: 16px; font-weight: bold; color: #1D2939; border: none; background: transparent;")
+        top_layout.addWidget(title_lbl)
+        top_layout.addStretch()
         self.header_buttons = QHBoxLayout()
-        header.addLayout(self.header_buttons)
-        self.main_layout.addLayout(header)
+        self.header_buttons.setSpacing(8)
+        top_layout.addLayout(self.header_buttons)
+        self.main_layout.addWidget(self.top_bar)
 
-        self.search_layout = QHBoxLayout()
+        self.search_bar = QWidget()
+        self.search_bar.setStyleSheet("background: #FFFFFF; border-bottom: 1px solid #E2E8F0;")
+        self.search_layout = QHBoxLayout(self.search_bar)
+        self.search_layout.setContentsMargins(16, 6, 16, 6)
         self.search_layout.setSpacing(8)
-        self.main_layout.addLayout(self.search_layout)
+        self.main_layout.addWidget(self.search_bar)
+
+        self.table_frame = QWidget()
+        self.table_frame.setStyleSheet("background: #FFFFFF;")
+        table_layout = QVBoxLayout(self.table_frame)
+        table_layout.setContentsMargins(8, 8, 8, 8)
 
         self.table = QTableWidget()
         self.table.setAlternatingRowColors(True)
@@ -46,15 +60,9 @@ class BasePage(QWidget):
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
         self.table.horizontalHeader().sectionResized.connect(self._on_header_changed)
         self.table.horizontalHeader().sectionMoved.connect(self._on_header_moved)
-        self.table.setStyleSheet("""
-            QTableWidget { gridline-color: #ddd; font-size: 13px; }
-            QTableWidget::item { padding: 4px 8px; }
-            QHeaderView::section {
-                background-color: #3498db; color: white; font-weight: bold;
-                padding: 6px; border: none;
-            }
-        """)
-        self.main_layout.addWidget(self.table)
+        self.table.verticalHeader().setVisible(False)
+        table_layout.addWidget(self.table)
+        self.main_layout.addWidget(self.table_frame, 1)
 
         self.status_layout = QHBoxLayout()
         self.main_layout.addLayout(self.status_layout)
@@ -65,7 +73,9 @@ class BasePage(QWidget):
         self._save_timer.timeout.connect(self._save_header_state)
 
     def add_search_field(self, label, widget):
-        self.search_layout.addWidget(QLabel(label))
+        lbl = QLabel(label)
+        lbl.setStyleSheet("font-size: 13px; color: #6B7280; border: none; background: transparent;")
+        self.search_layout.addWidget(lbl)
         self.search_layout.addWidget(widget)
         self._filter_widgets.append(widget)
         field_idx = len(self._filter_widgets) - 1
@@ -89,22 +99,30 @@ class BasePage(QWidget):
     def add_search_button(self, text, callback):
         btn = QPushButton(text)
         btn.setStyleSheet("""
-            QPushButton { background-color: #3498db; color: white; border: none;
-                          padding: 6px 16px; border-radius: 4px; font-size: 13px; }
-            QPushButton:hover { background-color: #2980b9; }
+            QPushButton { background: #2B579A; color: white; border: none;
+                          padding: 5px 14px; border-radius: 3px; font-size: 13px; }
+            QPushButton:hover { background: #234881; }
         """)
         btn.clicked.connect(callback)
         self.search_layout.addWidget(btn)
 
-    def add_header_button(self, text, callback, color="#27ae60"):
+    def add_header_button(self, text, callback, color="#2B579A"):
         btn = QPushButton(text)
         btn.setStyleSheet(f"""
-            QPushButton {{ background-color: {color}; color: white; border: none;
-                          padding: 6px 16px; border-radius: 4px; font-size: 13px; }}
-            QPushButton:hover {{ opacity: 0.9; }}
+            QPushButton {{ background: {color}; color: white; border: none;
+                          padding: 5px 14px; border-radius: 3px; font-size: 13px; }}
+            QPushButton:hover {{ background: {self._darken(color)}; }}
         """)
         btn.clicked.connect(callback)
         self.header_buttons.addWidget(btn)
+
+    def _darken(self, color):
+        if color.startswith("#") and len(color) == 7:
+            r = max(0, int(color[1:3], 16) - 20)
+            g = max(0, int(color[3:5], 16) - 20)
+            b = max(0, int(color[5:7], 16) - 20)
+            return f"#{r:02x}{g:02x}{b:02x}"
+        return color
 
     def set_table_headers(self, headers):
         self._column_count = len(headers)
@@ -116,8 +134,7 @@ class BasePage(QWidget):
             self.table.horizontalHeader().restoreState(saved_state)
             self._restoring = False
             return
-        self.table.horizontalHeader().setSectionResizeMode(
-            QHeaderView.ResizeToContents)
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self._auto_fit_timer = QTimer(self)
         self._auto_fit_timer.setSingleShot(True)
         self._auto_fit_timer.timeout.connect(self._initial_auto_fit_done)

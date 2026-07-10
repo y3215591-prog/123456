@@ -28,6 +28,11 @@ class DatabaseManager:
     def initialize(self):
         with self.get_connection() as conn:
             conn.executescript(SCHEMA_SQL)
+            cur = conn.execute(
+                "SELECT COUNT(*) FROM pragma_table_info('customers') WHERE name='is_archived'"
+            )
+            if cur.fetchone()[0] == 0:
+                conn.execute("ALTER TABLE customers ADD COLUMN is_archived INTEGER DEFAULT 0")
         self._seed_defaults()
 
     def backup(self, backup_path):
@@ -130,7 +135,8 @@ CREATE TABLE IF NOT EXISTS customers (
     contact_person TEXT DEFAULT '',
     contact_phone TEXT DEFAULT '',
     address TEXT DEFAULT '',
-    remark TEXT DEFAULT ''
+    remark TEXT DEFAULT '',
+    is_archived INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS suppliers (
@@ -267,6 +273,16 @@ CREATE TABLE IF NOT EXISTS daily_shipments (
     outbound_id INTEGER,
     created_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
     FOREIGN KEY (outbound_id) REFERENCES outbound_orders(id)
+);
+
+CREATE TABLE IF NOT EXISTS operation_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    operation_type TEXT NOT NULL DEFAULT '',
+    target_table TEXT DEFAULT '',
+    target_id INTEGER,
+    detail TEXT DEFAULT '',
+    operator TEXT DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
 );
 
 CREATE INDEX IF NOT EXISTS idx_seal_status ON seal_numbers(status);

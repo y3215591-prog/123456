@@ -1,49 +1,54 @@
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QLineEdit,
-    QPushButton, QSpinBox, QComboBox, QLabel, QMessageBox, QTextEdit,
+    QVBoxLayout, QHBoxLayout, QLineEdit, QPushButton, QSpinBox,
+    QComboBox, QLabel, QMessageBox, QTextEdit, QFrame,
 )
 from PySide6.QtCore import QTimer
 from datetime import datetime
 from silicon_manganese_inventory.services.outbound_service import OutboundService
 from silicon_manganese_inventory.dao.base_dao import CustomerDAO, SpecDAO, LocationDAO, SalesOrderDAO
+from silicon_manganese_inventory.ui.dialogs.base_eas_dialog import BaseEasDialog
 
 
-class OutboundDialog(QDialog):
+class OutboundDialog(BaseEasDialog):
     def __init__(self, db, parent=None):
-        super().__init__(parent)
+        super().__init__(title="新增出库", width=580, height=560, parent=parent)
         self.db = db
-        self.setWindowTitle("新增出库")
-        self.setMinimumWidth(550)
         self._order_timer = QTimer(self)
         self._order_timer.setSingleShot(True)
         self._order_timer.setInterval(300)
         self._order_timer.timeout.connect(self._on_order_changed_debounced)
         self._setup_ui()
+        self._on_location_changed()
+        self._on_qty_changed()
 
     def _setup_ui(self):
-        layout = QVBoxLayout(self)
-        form = QFormLayout()
+        card, cl = self.add_card()
 
         self.date_input = QLineEdit(datetime.now().strftime("%Y-%m-%d"))
-        form.addRow("日期:", self.date_input)
+        self.style_input(self.date_input)
+        self.add_form_row("日期:", self.date_input, cl)
 
         self.batch_input = QLineEdit()
-        form.addRow("批次号 *:", self.batch_input)
+        self.batch_input.setPlaceholderText("必填")
+        self.style_input(self.batch_input)
+        self.add_form_row("批次号 *:", self.batch_input, cl)
 
         self.spec_combo = QComboBox()
         self.spec_combo.setEditable(True)
         spec_dao = SpecDAO(self.db)
         for s in spec_dao.list():
             self.spec_combo.addItem(s["name"], s["id"])
-        form.addRow("品名规格:", self.spec_combo)
+        self.add_form_row("品名规格:", self.spec_combo, cl)
 
         self.sales_order_input = QLineEdit()
-        self.sales_order_input.setPlaceholderText("输入后自动带出客户/规格信息")
+        self.sales_order_input.setPlaceholderText("输入后自动带出客户/规格")
+        self.style_input(self.sales_order_input)
         self.sales_order_input.textChanged.connect(self._on_order_text_changed)
-        form.addRow("销售订单号:", self.sales_order_input)
+        self.add_form_row("销售订单号:", self.sales_order_input, cl)
 
         self.contract_input = QLineEdit()
-        form.addRow("合同号:", self.contract_input)
+        self.style_input(self.contract_input)
+        self.add_form_row("合同号:", self.contract_input, cl)
 
         self.customer_combo = QComboBox()
         self.customer_combo.setEditable(True)
@@ -51,22 +56,29 @@ class OutboundDialog(QDialog):
         cust_dao = CustomerDAO(self.db)
         for c in cust_dao.list():
             self.customer_combo.addItem(c["name"], c["id"])
-        form.addRow("客户:", self.customer_combo)
+        self.add_form_row("客户:", self.customer_combo, cl)
 
+        qc_widget = QFrame()
+        qc_layout = QHBoxLayout(qc_widget)
+        qc_layout.setContentsMargins(0, 0, 0, 0)
         self.quick_cust_input = QLineEdit()
         self.quick_cust_input.setPlaceholderText("输入新客户名快速新增")
+        self.style_input(self.quick_cust_input)
         self.quick_cust_btn = QPushButton("+新增")
+        self.quick_cust_btn.setStyleSheet(
+            "QPushButton { background: #10B981; color: white; border: none; padding: 5px 12px; border-radius: 3px; font-size: 12px; }")
         self.quick_cust_btn.clicked.connect(self._quick_add_customer)
-        qc_layout = QHBoxLayout()
         qc_layout.addWidget(self.quick_cust_input)
         qc_layout.addWidget(self.quick_cust_btn)
-        form.addRow("快速新增:", qc_layout)
+        self.add_form_row("快速新增:", qc_widget, cl)
 
         self.plate_input = QLineEdit()
-        form.addRow("车牌号:", self.plate_input)
+        self.style_input(self.plate_input)
+        self.add_form_row("车牌号:", self.plate_input, cl)
 
         self.order_remaining_label = QLabel("")
-        form.addRow("", self.order_remaining_label)
+        self.order_remaining_label.setStyleSheet("font-size: 12px; border: none; background: transparent;")
+        cl.addWidget(self.order_remaining_label)
 
         self.location_combo = QComboBox()
         loc_dao = LocationDAO(self.db)
@@ -76,46 +88,35 @@ class OutboundDialog(QDialog):
             available = loc_dao.get_available_qty(l["code"])
             if available <= 0:
                 continue
-            self.location_combo.addItem(f"{l['code']}(库存{available}吨)", l["code"])
+            self.location_combo.addItem(f"{l['code']} (库存{available}吨)", l["code"])
         self.location_combo.currentIndexChanged.connect(self._on_location_changed)
-        form.addRow("出库库位:", self.location_combo)
+        self.add_form_row("出库库位:", self.location_combo, cl)
 
         self.max_qty_label = QLabel("")
-        self.max_qty_label.setStyleSheet("color: #27ae60; font-size: 12px;")
-        form.addRow("可用:", self.max_qty_label)
+        self.max_qty_label.setStyleSheet("color: #16A34A; font-size: 12px; border: none; background: transparent;")
+        cl.addWidget(self.max_qty_label)
 
         self.quantity_input = QSpinBox()
         self.quantity_input.setRange(1, 99999)
         self.quantity_input.setValue(1)
         self.quantity_input.valueChanged.connect(self._on_qty_changed)
-        form.addRow("数量(吨) *:", self.quantity_input)
+        self.add_form_row("数量(吨) *:", self.quantity_input, cl)
 
         self.seal_preview = QLabel("")
-        self.seal_preview.setStyleSheet("color: #3498db; font-weight: bold;")
-        form.addRow("铅封号分配:", self.seal_preview)
+        self.seal_preview.setStyleSheet("color: #2B579A; font-weight: bold; font-size: 12px; border: none; background: transparent;")
+        cl.addWidget(self.seal_preview)
 
         self.operator_input = QLineEdit()
-        form.addRow("操作人:", self.operator_input)
+        self.style_input(self.operator_input)
+        self.add_form_row("操作人:", self.operator_input, cl)
 
         self.remark_input = QTextEdit()
         self.remark_input.setMaximumHeight(60)
-        form.addRow("备注:", self.remark_input)
+        self.style_textarea(self.remark_input)
+        self.add_form_row("备注:", self.remark_input, cl)
 
-        layout.addLayout(form)
-
-        btn_layout = QHBoxLayout()
-        btn_layout.addStretch()
-        save_btn = QPushButton("保存")
-        save_btn.setStyleSheet("background-color: #27ae60; color: white; padding: 8px 24px;")
-        save_btn.clicked.connect(self._save)
-        cancel_btn = QPushButton("取消")
-        cancel_btn.clicked.connect(self.reject)
-        btn_layout.addWidget(save_btn)
-        btn_layout.addWidget(cancel_btn)
-        layout.addLayout(btn_layout)
-
-        self._on_location_changed()
-        self._on_qty_changed()
+        self.add_primary_button("保存", self._save, "#16A34A")
+        self.add_cancel_button()
 
     def _on_order_text_changed(self, text):
         self._order_timer.start()
@@ -143,14 +144,11 @@ class OutboundDialog(QDialog):
             shipped = self._get_order_shipped(text.strip())
             remaining = ordered - shipped
             status_text = "已完成" if remaining <= 0 else f"待发 {remaining} 吨"
-            self.order_remaining_label.setText(
-                f"订购: {ordered}吨 | 已发: {shipped}吨 | {status_text}")
+            self.order_remaining_label.setText(f"订购: {ordered}吨 | 已发: {shipped}吨 | {status_text}")
             if remaining <= 0:
-                self.order_remaining_label.setStyleSheet(
-                    "color: #27ae60; font-size: 13px; font-weight: bold;")
+                self.order_remaining_label.setStyleSheet("color: #16A34A; font-size: 13px; font-weight: bold;")
             else:
-                self.order_remaining_label.setStyleSheet(
-                    "color: #e67e22; font-size: 13px; font-weight: bold;")
+                self.order_remaining_label.setStyleSheet("color: #D97706; font-size: 13px; font-weight: bold;")
         self._on_qty_changed()
 
     def _get_order_shipped(self, order_no):
@@ -186,15 +184,14 @@ class OutboundDialog(QDialog):
             remaining = self._get_order_remaining_qty(sales_order)
             if remaining is not None and qty > remaining:
                 msg += f"  [超发预警: 订单仅余 {remaining} 吨]"
-                self.quantity_input.setStyleSheet(
-                    "QSpinBox { color: #e74c3c; font-weight: bold; }")
-                self.seal_preview.setStyleSheet("color: #e74c3c;")
+                self.quantity_input.setStyleSheet("QSpinBox { color: #DC2626; font-weight: bold; }")
+                self.seal_preview.setStyleSheet("color: #DC2626; font-weight: bold; font-size: 12px;")
             else:
                 self.quantity_input.setStyleSheet("")
-                self.seal_preview.setStyleSheet("")
+                self.seal_preview.setStyleSheet("color: #2B579A; font-weight: bold; font-size: 12px;")
         else:
             self.quantity_input.setStyleSheet("")
-            self.seal_preview.setStyleSheet("")
+            self.seal_preview.setStyleSheet("color: #2B579A; font-weight: bold; font-size: 12px;")
         self.seal_preview.setText(msg)
 
     def _quick_add_customer(self):
