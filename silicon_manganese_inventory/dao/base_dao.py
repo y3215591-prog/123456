@@ -155,20 +155,11 @@ class LocationDAO:
 
     def get_available_qty(self, code):
         with self.db.get_connection() as conn:
-            used = conn.execute(
-                """SELECT COALESCE(SUM(pio.quantity), 0)
-                   FROM pre_inbound_orders pio
-                   JOIN inbound_orders io ON pio.id=io.pre_inbound_id
-                   WHERE pio.location_code=?""",
+            row = conn.execute(
+                "SELECT COUNT(*) FROM seal_numbers WHERE location_code=? AND status='in_stock'",
                 (code,),
-            ).fetchone()[0]
-            total = conn.execute(
-                """SELECT COALESCE(SUM(pio.quantity), 0)
-                   FROM pre_inbound_orders pio
-                   WHERE pio.location_code=?""",
-                (code,),
-            ).fetchone()[0]
-            return max(0, total - used)
+            ).fetchone()
+            return row[0]
 
 
 class SpecDAO:
