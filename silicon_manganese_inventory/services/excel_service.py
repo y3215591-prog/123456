@@ -504,6 +504,42 @@ class ExcelService:
         wb.close()
         return stats
 
+    def import_inventory_balance(self, file_path):
+        wb = openpyxl.load_workbook(file_path, data_only=True)
+        ws = wb.active
+        results = []
+        total_balance = 0
+        for row_idx, row in enumerate(ws.iter_rows(min_row=2, max_row=ws.max_row, values_only=True), 2):
+            if not row or len(row) < 9:
+                continue
+            location = str(row[2] or "").strip()
+            batch_no = str(row[3] or "").strip()
+            balance = row[8]
+            if not batch_no:
+                continue
+            try:
+                balance = float(balance) if balance else 0
+            except (ValueError, TypeError):
+                balance = 0
+            if balance <= 0:
+                continue
+            total_balance += balance
+            results.append({
+                "location": location,
+                "batch_no": batch_no,
+                "balance": balance,
+                "material_code": row[0],
+                "material_name": row[1],
+                "unit": row[4],
+                "row": row_idx,
+            })
+        wb.close()
+        return {
+            "items": results,
+            "total_balance": total_balance,
+            "count": len(results),
+        }
+
 
 class ExportService:
     def __init__(self, db: DatabaseManager):

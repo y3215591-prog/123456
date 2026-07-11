@@ -1,8 +1,10 @@
-from PySide6.QtWidgets import QComboBox, QLabel, QTableWidgetItem, QHeaderView
+from PySide6.QtWidgets import (
+    QComboBox, QLabel, QTableWidgetItem, QHeaderView, QFileDialog, QMessageBox,
+)
 from PySide6.QtCore import Qt
 from silicon_manganese_inventory.ui.base_page import BasePage
 from silicon_manganese_inventory.services.report_service import ReportService
-from silicon_manganese_inventory.services.excel_service import ExportService
+from silicon_manganese_inventory.services.excel_service import ExportService, ExcelService
 from silicon_manganese_inventory.dao.base_dao import LocationDAO
 from silicon_manganese_inventory.ui.dialogs.location_detail_dialog import (
     LocationDetailDialog,
@@ -18,6 +20,7 @@ class InventoryPage(BasePage):
     def __init__(self, db):
         super().__init__(db, "成品库存")
         self.report_svc = ReportService(db)
+        self.excel_svc = ExcelService(db)
         self._prefs = UIPreferences()
 
         self.location_combo = QComboBox()
@@ -27,6 +30,7 @@ class InventoryPage(BasePage):
             self.location_combo.addItem(l["code"], l["code"])
         self.add_search_field("库位:", self.location_combo)
         self.add_search_button("搜索", self._do_search)
+        self.add_header_button("上传盘点数据", self._import_balance, "#8B5CF6")
         self.add_header_button("导出 Excel", self._export, "#2980b9")
 
         self.total_label = QLabel("库存总计: 0 吨")
@@ -65,6 +69,29 @@ class InventoryPage(BasePage):
                 r["last_inbound_date"], r["overall_result"] or "", display,
             ])
         self.populate_table(data, highlight_col=2, highlight_threshold=100)
+
+    def _import_balance(self):
+        path, _ = QFileDialog.getOpenFileName(
+            self, "选择盘点Excel文件", "",
+            "Excel 文件 (*.xlsx *.xls);;所有文件 (*)")
+        if not path:
+            return
+
+        try:
+            result = self.excel_svc.import_inventory_balance(path)
+        except Exception as e:
+            QMessageBox.warning(self, "导入失败", f"无法解析Excel文件:\n{str(e)}")
+            return
+
+        if not result["items"]:
+            QMessageBox.information(self, "提示", "未发现结余>0的批次数据")
+            return
+
+        from silicon_manganese_inventory.ui.dialogs.inventory_balance_dialog import (
+            InventoryBalanceDialog,
+        )
+        dlg = InventoryBalanceDialog(result, self.db, self)
+        dlg.exec()
 
     def populate_table(self, rows, highlight_col=None, highlight_threshold=None):
         super().populate_table(rows, highlight_col, highlight_threshold)
