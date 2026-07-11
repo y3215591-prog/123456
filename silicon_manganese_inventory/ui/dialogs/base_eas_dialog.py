@@ -69,6 +69,7 @@ class BaseEasDialog(QDialog):
             QPushButton:hover {{ background: {self._darken(color)}; }}
         """)
         btn.clicked.connect(callback)
+        btn.setDefault(True)
         self.btn_layout.addWidget(btn)
         return btn
 

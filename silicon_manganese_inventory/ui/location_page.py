@@ -96,7 +96,7 @@ class LocationPage(BasePage):
                 self.style_textarea(self.remark_input)
                 self.add_form_row("备注", self.remark_input, cl)
 
-                self.add_primary_button("保存", self.accept)
+                self.add_primary_button("保存", lambda dlg=self: dlg.accept())
                 self.add_cancel_button()
 
             def get_values(self):
@@ -151,7 +151,7 @@ class LocationPage(BasePage):
                 self.style_textarea(self.remark_input)
                 self.add_form_row("备注", self.remark_input, cl)
 
-                self.add_primary_button("保存", self.accept)
+                self.add_primary_button("保存", lambda dlg=self: dlg.accept())
                 self.add_cancel_button()
 
             def get_values(self):
