@@ -104,7 +104,7 @@ class LocationPage(BasePage):
                 self.add_cancel_button()
 
             def _on_save(self):
-                self.accept()
+                self.done(1)
 
             def get_values(self):
                 return {
@@ -121,8 +121,8 @@ class LocationPage(BasePage):
                 return
             try:
                 self.loc_dao.create(code=vals["code"], name=vals["name"], remark=vals["remark"])
-                self.show_info(f"库位 {vals['code']} 已新增")
                 self.refresh()
+                self.show_info(f"库位 {vals['code']} 已新增")
             except Exception as e:
                 self.show_error(str(e))
 
@@ -162,7 +162,7 @@ class LocationPage(BasePage):
                 self.add_cancel_button()
 
             def _on_save(self):
-                self.accept()
+                self.done(1)
 
             def get_values(self):
                 return {
@@ -175,8 +175,8 @@ class LocationPage(BasePage):
             vals = dlg.get_values()
             try:
                 self.loc_dao.update(loc_id, name=vals["name"], remark=vals["remark"])
-                self.show_info("库位已更新")
                 self.refresh()
+                self.show_info("库位已更新")
             except Exception as e:
                 self.show_error(str(e))
 
