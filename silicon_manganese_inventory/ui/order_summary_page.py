@@ -40,8 +40,11 @@ class OrderSummaryPage(BasePage):
         self.populate_table(data)
 
     def _export(self):
-        export = ExportService(self.db)
-        from pathlib import Path
-        path = str(Path.home() / "Desktop" / "导出订单装车汇总.xlsx")
-        export.export_order_summary(path)
-        self.show_info(f"已导出到: {path}")
+        try:
+            export = ExportService(self.db)
+            from pathlib import Path
+            path = str(Path.home() / "Desktop" / "导出订单装车汇总.xlsx")
+            export.export_order_summary(path)
+            self.show_info(f"已导出到: {path}")
+        except Exception as e:
+            self.show_error(f"导出失败: {e}")

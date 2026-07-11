@@ -153,8 +153,11 @@ class InventoryPage(BasePage):
                     dlg.exec()
 
     def _export(self):
-        export = ExportService(self.db)
-        from pathlib import Path
-        path = str(Path.home() / "Desktop" / "导出成品库存.xlsx")
-        export.export_inventory(path)
-        self.show_info(f"已导出到: {path}")
+        try:
+            export = ExportService(self.db)
+            from pathlib import Path
+            path = str(Path.home() / "Desktop" / "导出成品库存.xlsx")
+            export.export_inventory(path)
+            self.show_info(f"已导出到: {path}")
+        except Exception as e:
+            self.show_error(f"导出失败: {e}")

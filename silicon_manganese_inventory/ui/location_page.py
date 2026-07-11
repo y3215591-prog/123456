@@ -70,7 +70,10 @@ class LocationPage(BasePage):
         if row < 0:
             self.show_error("请先选择一条库位记录")
             return None
-        code = self.table.item(row, 0).text()
+        item = self.table.item(row, 0)
+        if not item:
+            return None
+        code = item.text()
         return self.loc_dao.get_by_code(code)
 
     def _add_location(self):

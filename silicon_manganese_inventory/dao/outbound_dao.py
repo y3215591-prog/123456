@@ -88,4 +88,5 @@ class OutboundDAO:
                            WHERE outbound_id=? AND status='shipped'""",
                         (outbound_id,),
                     )
+            conn.execute("DELETE FROM daily_shipments WHERE outbound_id=?", (outbound_id,))
             conn.execute("DELETE FROM outbound_orders WHERE id=?", (outbound_id,))

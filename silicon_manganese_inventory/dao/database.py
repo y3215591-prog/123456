@@ -43,11 +43,12 @@ class DatabaseManager:
         self._seed_defaults()
 
     def backup(self, backup_path):
-        dst = os.path.abspath(backup_path).replace("'", "''")
+        dst = os.path.abspath(backup_path)
         os.makedirs(os.path.dirname(dst), exist_ok=True)
+        safe = dst.replace("'", "''")
         with self.get_connection() as conn:
-            conn.execute(f"VACUUM INTO '{dst}'")
-        return dst.replace("''", "'")
+            conn.execute(f"VACUUM INTO '{safe}'")
+        return dst
 
     def restore(self, backup_path):
         src = os.path.abspath(backup_path)
@@ -88,8 +89,8 @@ class DatabaseManager:
             conn.execute("DELETE FROM daily_shipments")
             conn.execute("DELETE FROM outbound_orders")
             conn.execute("DELETE FROM inbound_orders")
-            conn.execute("DELETE FROM pre_inbound_orders")
             conn.execute("DELETE FROM lab_results")
+            conn.execute("DELETE FROM pre_inbound_orders")
             conn.execute("DELETE FROM seal_numbers")
             conn.execute("DELETE FROM seal_batches")
             conn.execute("DELETE FROM sales_orders")

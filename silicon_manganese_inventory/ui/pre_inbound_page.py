@@ -140,8 +140,11 @@ class PreInboundPage(BasePage):
             self.refresh()
 
     def _export(self):
-        export = ExportService(self.db)
-        from pathlib import Path
-        path = str(Path.home() / "Desktop" / "导出预入库管理.xlsx")
-        export.export_pre_inbound(path)
-        self.show_info(f"已导出到: {path}")
+        try:
+            export = ExportService(self.db)
+            from pathlib import Path
+            path = str(Path.home() / "Desktop" / "导出预入库管理.xlsx")
+            export.export_pre_inbound(path)
+            self.show_info(f"已导出到: {path}")
+        except Exception as e:
+            self.show_error(f"导出失败: {e}")

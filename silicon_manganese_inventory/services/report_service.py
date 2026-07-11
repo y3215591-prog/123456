@@ -27,7 +27,7 @@ class ReportService:
                 "GROUP_CONCAT(DISTINCT sn.seal_code) AS seal_list, "
                 "MIN(sn.seal_code) AS seal_min, MAX(sn.seal_code) AS seal_max "
                 "FROM seal_numbers sn "
-                "JOIN pre_inbound_orders pio ON sn.pre_inbound_id=pio.id "
+                "LEFT JOIN pre_inbound_orders pio ON sn.pre_inbound_id=pio.id "
                 "LEFT JOIN lab_results lr ON pio.id=lr.pre_inbound_id "
                 "WHERE " + " AND ".join(conditions) +
                 " GROUP BY sn.batch_no, sn.location_code "

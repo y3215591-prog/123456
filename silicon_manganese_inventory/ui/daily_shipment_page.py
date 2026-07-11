@@ -108,7 +108,11 @@ class DailyShipmentPage(BasePage):
         if row < 0:
             self.show_error("请先选择一条记录")
             return
-        record_id = self.table.item(row, 0).text()
+        item = self.table.item(row, 0)
+        if not item:
+            self.show_error("无效的记录")
+            return
+        record_id = item.text()
         record = self.shipment_dao.get(int(record_id))
         if not record:
             self.show_error("未找到记录")
@@ -118,24 +122,27 @@ class DailyShipmentPage(BasePage):
             self.refresh()
 
     def _export(self):
-        kwargs = {}
-        if self.date_from.date().isValid():
-            kwargs["date_from"] = self.date_from.date().toString("yyyy-MM-dd")
-        if self.date_to.date().isValid():
-            kwargs["date_to"] = self.date_to.date().toString("yyyy-MM-dd")
-        if self.order_input.text():
-            kwargs["sales_order_no"] = self.order_input.text()
-        if self.plate_input.text():
-            kwargs["plate_no"] = self.plate_input.text()
-        include_seals = QMessageBox.question(
-            self, "导出选项", "是否在导出中包含铅封号列?",
-            QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes,
-        ) == QMessageBox.Yes
-        export = ExportService(self.db)
-        from pathlib import Path
-        path = str(Path.home() / "Desktop" / "导出每日发货明细.xlsx")
-        export.export_daily_shipments(path, include_seals=include_seals, **kwargs)
-        self.show_info(f"已导出到: {path}")
+        try:
+            kwargs = {}
+            if self.date_from.date().isValid():
+                kwargs["date_from"] = self.date_from.date().toString("yyyy-MM-dd")
+            if self.date_to.date().isValid():
+                kwargs["date_to"] = self.date_to.date().toString("yyyy-MM-dd")
+            if self.order_input.text():
+                kwargs["sales_order_no"] = self.order_input.text()
+            if self.plate_input.text():
+                kwargs["plate_no"] = self.plate_input.text()
+            include_seals = QMessageBox.question(
+                self, "导出选项", "是否在导出中包含铅封号列?",
+                QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes,
+            ) == QMessageBox.Yes
+            export = ExportService(self.db)
+            from pathlib import Path
+            path = str(Path.home() / "Desktop" / "导出每日发货明细.xlsx")
+            export.export_daily_shipments(path, include_seals=include_seals, **kwargs)
+            self.show_info(f"已导出到: {path}")
+        except Exception as e:
+            self.show_error(f"导出失败: {e}")
 
     def _import_mes(self):
         file_path, _ = QFileDialog.getOpenFileName(

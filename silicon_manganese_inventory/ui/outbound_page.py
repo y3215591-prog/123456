@@ -111,8 +111,11 @@ class OutboundPage(BasePage):
             self.refresh()
 
     def _export(self):
-        export = ExportService(self.db)
-        from pathlib import Path
-        path = str(Path.home() / "Desktop" / "导出出库发货.xlsx")
-        export.export_outbound(path)
-        self.show_info(f"已导出到: {path}")
+        try:
+            export = ExportService(self.db)
+            from pathlib import Path
+            path = str(Path.home() / "Desktop" / "导出出库发货.xlsx")
+            export.export_outbound(path)
+            self.show_info(f"已导出到: {path}")
+        except Exception as e:
+            self.show_error(f"导出失败: {e}")
