@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QLineEdit, QComboBox
+from PySide6.QtWidgets import QLineEdit, QComboBox, QHeaderView
 from silicon_manganese_inventory.ui.base_page import BasePage
 from silicon_manganese_inventory.services.inbound_service import InboundService
 from silicon_manganese_inventory.dao.lab_dao import LabDAO
@@ -7,6 +7,8 @@ from silicon_manganese_inventory.dao.base_dao import LocationDAO
 
 
 class InboundConfirmPage(BasePage):
+    LAB_DETAIL_COL = 7
+
     def __init__(self, db):
         super().__init__(db, "入库确认")
         self.inbound_svc = InboundService(db)
@@ -64,6 +66,11 @@ class InboundConfirmPage(BasePage):
                 r["location_code"], "已化验", seal_range, lab_detail,
             ])
         self.populate_table(data)
+
+    def populate_table(self, rows, highlight_col=None, highlight_threshold=None):
+        super().populate_table(rows, highlight_col, highlight_threshold)
+        header = self.table.horizontalHeader()
+        header.setSectionResizeMode(self.LAB_DETAIL_COL, QHeaderView.Stretch)
 
     def _confirm(self):
         row = self.table.currentRow()

@@ -41,7 +41,28 @@ class InventoryPage(BasePage):
             "批次号", "库位", "结存(吨)", "最近入库日期", "化验结果", "铅封号明细",
         ])
         self.table.cellClicked.connect(self._on_cell_clicked)
-        self._seal_data = {}
+
+    def _format_lab_detail(self, row):
+        mn = row.get("mn_content")
+        si = row.get("si_content")
+        p = row.get("p_content")
+        s = row.get("s_content")
+        c = row.get("c_content")
+        overall = row.get("overall_result") or ""
+        parts = []
+        if mn is not None:
+            parts.append(f"Mn:{mn}%")
+        if si is not None:
+            parts.append(f"Si:{si}%")
+        if p is not None:
+            parts.append(f"P:{p}%")
+        if s is not None:
+            parts.append(f"S:{s}%")
+        if c is not None:
+            parts.append(f"C:{c}%")
+        if parts:
+            return " ".join(parts) + (f" [{overall}]" if overall else "")
+        return overall
 
     def _do_search(self):
         self.refresh()
@@ -51,22 +72,19 @@ class InventoryPage(BasePage):
         rows = self.report_svc.get_inventory_report(location_code=location)
         total = sum(r["balance"] or 0 for r in rows)
         self.total_label.setText(f"库存总计: {total} 吨")
-        self._seal_data = {}
         data = []
-        for r_idx, r in enumerate(rows):
+        for r in rows:
             location_code = r["location_code"] or ""
-            seal_list = r["seal_list"] or ""
             seal_min = r["seal_min"] or ""
             seal_max = r["seal_max"] or ""
             balance = r["balance"]
-            if seal_list:
-                self._seal_data[r_idx] = seal_list
+            if r.get("seal_list"):
                 display = f"{seal_min}~{seal_max} ({balance}个)"
             else:
                 display = ""
             data.append([
                 r["batch_no"], location_code, balance,
-                r["last_inbound_date"], r["overall_result"] or "", display,
+                r["last_inbound_date"], self._format_lab_detail(r), display,
             ])
         self.populate_table(data, highlight_col=2, highlight_threshold=100)
 
@@ -99,7 +117,7 @@ class InventoryPage(BasePage):
         header.setSectionResizeMode(QHeaderView.Interactive)
         header.resizeSections(QHeaderView.ResizeToContents)
 
-        for r in range(len(rows)):
+        for r in range(self.table.rowCount()):
             loc_item = self.table.item(r, self.LOCATION_COL)
             if loc_item and loc_item.text():
                 loc_item.setForeground(Qt.blue)
@@ -117,6 +135,7 @@ class InventoryPage(BasePage):
                 seal_item.setFont(font)
 
     def _on_cell_clicked(self, row, col):
+        all_idx = self._all_rows_index(row)
         if col == self.LOCATION_COL:
             item = self.table.item(row, col)
             if item and item.text().strip():
@@ -124,13 +143,16 @@ class InventoryPage(BasePage):
                 dlg = LocationDetailDialog(self.db, location_code, self)
                 dlg.exec()
         elif col == self.SEAL_COL:
-            if row in self._seal_data:
-                dlg = SealListDialog(self._seal_data[row], self)
-                dlg.exec()
+            if all_idx < len(self._all_rows):
+                r = self._all_rows[all_idx]
+                seal_list = r.get("seal_list") or ""
+                if seal_list:
+                    dlg = SealListDialog(seal_list, self)
+                    dlg.exec()
 
     def _export(self):
         export = ExportService(self.db)
         from pathlib import Path
-        path = str(Path.home() / "Desktop" / "成品库存.xlsx")
+        path = str(Path.home() / "Desktop" / "导出成品库存.xlsx")
         export.export_inventory(path)
         self.show_info(f"已导出到: {path}")

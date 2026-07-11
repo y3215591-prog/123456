@@ -142,6 +142,6 @@ class PreInboundPage(BasePage):
     def _export(self):
         export = ExportService(self.db)
         from pathlib import Path
-        path = str(Path.home() / "Desktop" / "预入库管理.xlsx")
+        path = str(Path.home() / "Desktop" / "导出预入库管理.xlsx")
         export.export_pre_inbound(path)
         self.show_info(f"已导出到: {path}")

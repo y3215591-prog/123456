@@ -79,6 +79,7 @@ class ExcelService:
                 ("factory_code", self._find_col(headers, ["工厂", "工厂代码", "factory_code"])),
                 ("factory_name", self._find_col(headers, ["工厂名称", "factory_name"])),
                 ("pickup_method", self._find_col(headers, ["提货方式", "pickup_method"])),
+                ("particle_size", self._find_col(headers, ["粒度", "particle_size"])),
             ]:
                 idx = col_idx_map
                 if idx is not None and idx < len(row):
@@ -198,6 +199,7 @@ class ExcelService:
                 ("factory_code", self._find_col(headers, ["工厂", "工厂代码", "factory_code"])),
                 ("factory_name", self._find_col(headers, ["工厂名称", "factory_name"])),
                 ("pickup_method", self._find_col(headers, ["提货方式", "pickup_method"])),
+                ("particle_size", self._find_col(headers, ["粒度", "particle_size"])),
             ]:
                 idx = col_idx_map
                 if idx is not None and idx < len(row):
@@ -545,6 +547,29 @@ class ExportService:
     def __init__(self, db: DatabaseManager):
         self.db = db
 
+    @staticmethod
+    def _fmt_lab_detail(row):
+        mn = row.get("mn_content")
+        si = row.get("si_content")
+        p = row.get("p_content")
+        s = row.get("s_content")
+        c = row.get("c_content")
+        overall = row.get("overall_result") or ""
+        parts = []
+        if mn is not None:
+            parts.append(f"Mn:{mn}%")
+        if si is not None:
+            parts.append(f"Si:{si}%")
+        if p is not None:
+            parts.append(f"P:{p}%")
+        if s is not None:
+            parts.append(f"S:{s}%")
+        if c is not None:
+            parts.append(f"C:{c}%")
+        if parts:
+            return " ".join(parts) + (f" [{overall}]" if overall else "")
+        return overall
+
     def export_inventory(self, file_path):
         from silicon_manganese_inventory.services.report_service import ReportService
         service = ReportService(self.db)
@@ -552,13 +577,69 @@ class ExportService:
         wb = openpyxl.Workbook()
         ws = wb.active
         ws.title = "成品库存"
-        ws.append(["批次号", "库位", "结存(吨)", "最近入库日期", "化验结果", "铅封号明细"])
-        for row in rows:
-            ws.append([
-                row["batch_no"], row["location_code"], row["balance"],
-                row["last_inbound_date"], row["overall_result"] or "",
-                row["seal_list"] or "",
-            ])
+
+        header_fill = openpyxl.styles.PatternFill(start_color="2B579A", end_color="2B579A", fill_type="solid")
+        header_font = openpyxl.styles.Font(name="微软雅黑", size=11, bold=True, color="FFFFFF")
+        cell_font = openpyxl.styles.Font(name="微软雅黑", size=10)
+        thin_border = openpyxl.styles.Border(
+            left=openpyxl.styles.Side(style="thin", color="D1D5DB"),
+            right=openpyxl.styles.Side(style="thin", color="D1D5DB"),
+            top=openpyxl.styles.Side(style="thin", color="D1D5DB"),
+            bottom=openpyxl.styles.Side(style="thin", color="D1D5DB"),
+        )
+        group_fill = openpyxl.styles.PatternFill(start_color="F0F4F8", end_color="F0F4F8", fill_type="solid")
+        center_align = openpyxl.styles.Alignment(horizontal="center", vertical="center")
+        left_align = openpyxl.styles.Alignment(horizontal="left", vertical="center")
+
+        headers = ["序号", "批次号", "库位", "铅封号", "结存(吨)", "最近入库日期", "化验结果"]
+        for col_idx, h in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_idx, value=h)
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = center_align
+            cell.border = thin_border
+
+        ws.column_dimensions["A"].width = 8
+        ws.column_dimensions["B"].width = 16
+        ws.column_dimensions["C"].width = 14
+        ws.column_dimensions["D"].width = 18
+        ws.column_dimensions["E"].width = 12
+        ws.column_dimensions["F"].width = 16
+        ws.column_dimensions["G"].width = 32
+
+        row_num = 2
+        seq = 0
+        for group in rows:
+            seal_list = (group["seal_list"] or "").split(",") if group["seal_list"] else []
+            seal_list = [s.strip() for s in seal_list if s.strip()]
+            if not seal_list:
+                seal_list = [""]
+            batch_no = group["batch_no"] or ""
+            loc_code = group["location_code"] or ""
+            balance = group["balance"]
+            last_date = group["last_inbound_date"] or ""
+            result = self._fmt_lab_detail(group)
+
+            for si, seal in enumerate(seal_list):
+                seq += 1
+                vals = [seq, batch_no, loc_code, seal, balance, last_date, result]
+                for col_idx, val in enumerate(vals, 1):
+                    cell = ws.cell(row=row_num, column=col_idx, value=val)
+                    cell.font = cell_font
+                    cell.border = thin_border
+                    if col_idx in (1, 4, 5):
+                        cell.alignment = center_align
+                    else:
+                        cell.alignment = left_align
+                    if si % 2 == 0:
+                        cell.fill = group_fill
+                row_num += 1
+
+            if group != rows[-1]:
+                row_num += 1
+
+        ws.freeze_panes = "A2"
+        ws.auto_filter.ref = f"A1:G{row_num - 1}"
         wb.save(file_path)
 
     def export_daily_shipments(self, file_path, include_seals=True, **filters):

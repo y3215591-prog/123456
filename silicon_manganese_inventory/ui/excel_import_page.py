@@ -125,21 +125,21 @@ class ExcelImportPage(BasePage):
     def _export_inventory(self):
         export = ExportService(self.db)
         from pathlib import Path
-        path = str(Path.home() / "Desktop" / "成品库存.xlsx")
+        path = str(Path.home() / "Desktop" / "导出成品库存.xlsx")
         export.export_inventory(path)
         self.show_info(f"已导出到: {path}")
 
     def _export_daily_shipment(self):
         export = ExportService(self.db)
         from pathlib import Path
-        path = str(Path.home() / "Desktop" / "每日发货明细.xlsx")
+        path = str(Path.home() / "Desktop" / "导出每日发货明细.xlsx")
         export.export_daily_shipments(path)
         self.show_info(f"已导出到: {path}")
 
     def _export_order_summary(self):
         export = ExportService(self.db)
         from pathlib import Path
-        path = str(Path.home() / "Desktop" / "订单装车汇总.xlsx")
+        path = str(Path.home() / "Desktop" / "导出订单装车汇总.xlsx")
         export.export_order_summary(path)
         self.show_info(f"已导出到: {path}")
 

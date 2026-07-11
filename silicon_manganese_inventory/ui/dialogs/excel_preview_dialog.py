@@ -118,4 +118,8 @@ class ExcelPreviewDialog(BaseEasDialog):
                 item.setBackground(QColor("#DCFCE7") if i in self.checked else QColor("#FEE2E2"))
 
     def get_selected_rows(self):
-        return [self.all_rows[i + 1] for i in sorted(self.checked)]
+        if not self.all_rows or not self.checked:
+            return []
+        result = [self.all_rows[0]]
+        result.extend(self.all_rows[i + 1] for i in sorted(self.checked))
+        return result

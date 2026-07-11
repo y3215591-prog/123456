@@ -96,10 +96,12 @@ class CustomerPage(BasePage):
             return
         try:
             svc = ExcelService(self.db)
-            stats = svc.import_customers_from_sales_excel(file_path)
+            cust_stats = svc.import_customers_from_sales_excel(file_path)
+            order_stats = svc.import_sales_orders(file_path)
             msg = (f"导入完成:\n"
-                   f"  新增客户: {stats['imported']} 条\n"
-                   f"  跳过(重复): {stats['skipped']} 条")
+                   f"  新增客户: {cust_stats['imported']} 条\n"
+                   f"  跳过(重复): {cust_stats['skipped']} 条\n"
+                   f"  导入销售订单: {order_stats['imported_orders']} 条")
             QMessageBox.information(self, "导入结果", msg)
         except Exception as e:
             self.show_error(f"导入失败: {e}")

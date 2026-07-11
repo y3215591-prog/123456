@@ -21,6 +21,9 @@ class ReportService:
             sql = (
                 "SELECT sn.batch_no, sn.location_code, COUNT(*) AS balance, "
                 "MAX(pio.date) AS last_inbound_date, lr.overall_result, "
+                "MAX(lr.mn_content) AS mn_content, MAX(lr.si_content) AS si_content, "
+                "MAX(lr.p_content) AS p_content, MAX(lr.s_content) AS s_content, "
+                "MAX(lr.c_content) AS c_content, "
                 "GROUP_CONCAT(DISTINCT sn.seal_code) AS seal_list, "
                 "MIN(sn.seal_code) AS seal_min, MAX(sn.seal_code) AS seal_max "
                 "FROM seal_numbers sn "
@@ -34,10 +37,6 @@ class ReportService:
         results = []
         for row in rows:
             row_dict = dict(row)
-            seal_list = row_dict.get("seal_list", "") or ""
-            if seal_list and len(seal_list) > 200:
-                seal_list = seal_list[:200] + "..."
-            row_dict["seal_list"] = seal_list
             results.append(row_dict)
         return results
 

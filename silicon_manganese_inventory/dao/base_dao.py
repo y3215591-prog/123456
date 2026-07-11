@@ -325,6 +325,11 @@ class WarehouseDAO:
 
 
 class SalesOrderDAO:
+    _ALLOWED = {"order_no", "line_no", "customer_code", "customer_name",
+                "contract_ref", "contract_no", "material_code", "material_desc",
+                "delivery_start", "delivery_end", "delivery_address",
+                "quantity", "unit", "factory_code", "factory_name",
+                "pickup_method", "particle_size"}
     def __init__(self, db: DatabaseManager):
         self.db = db
 
@@ -335,8 +340,8 @@ class SalesOrderDAO:
                    (order_no, line_no, customer_code, customer_name, contract_ref,
                     contract_no, material_code, material_desc, delivery_start,
                     delivery_end, delivery_address, quantity, unit, factory_code,
-                    factory_name, pickup_method)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    factory_name, pickup_method, particle_size)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (kwargs.get("order_no", ""), kwargs.get("line_no", ""),
                  kwargs.get("customer_code", ""), kwargs.get("customer_name", ""),
                  kwargs.get("contract_ref", ""), kwargs.get("contract_no", ""),
@@ -344,9 +349,14 @@ class SalesOrderDAO:
                  kwargs.get("delivery_start", ""), kwargs.get("delivery_end", ""),
                  kwargs.get("delivery_address", ""), kwargs.get("quantity", 0),
                  kwargs.get("unit", "TO"), kwargs.get("factory_code", ""),
-                 kwargs.get("factory_name", ""), kwargs.get("pickup_method", "")),
+                 kwargs.get("factory_name", ""), kwargs.get("pickup_method", ""),
+                 kwargs.get("particle_size", "")),
             )
             return cursor.lastrowid
+
+    def update(self, order_id, **kwargs):
+        with self.db.get_connection() as conn:
+            _safe_update(conn, "sales_orders", order_id, self._ALLOWED, **kwargs)
 
     def get_by_order_no(self, order_no):
         with self.db.get_connection() as conn:

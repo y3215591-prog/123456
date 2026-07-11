@@ -17,6 +17,7 @@ class BasicDataPage(BasePage):
         self.add_search_field("数据类型:", self.type_combo)
 
         self.add_header_button("+ 新增", self._add_item, "#27ae60")
+        self.add_header_button("删除", self._delete_selected, "#DC2626")
 
         self.type_combo.addItems(["品名规格", "检验标准", "仓库"])
         self.table.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -31,20 +32,16 @@ class BasicDataPage(BasePage):
             self.set_table_headers(["ID", "仓库名称", "地址", "备注"])
         self.refresh()
 
-    def refresh(self):
-        text = self.type_combo.currentText()
-        if text == "品名规格":
-            rows = self.spec_dao.list()
-            data = [[r["id"], r["name"], r["remark"] or ""] for r in rows]
-        elif text == "检验标准":
-            rows = self.lab_dao.get_standards()
-            data = [[r["id"], r["element"], r["min_value"], r["max_value"], r["remark"] or ""] for r in rows]
-        elif text == "仓库":
-            rows = self.warehouse_dao.list()
-            data = [[r["id"], r["name"], r["address"] or "", r["remark"] or ""] for r in rows]
-        else:
-            data = []
-        self.populate_table(data)
+    def _delete_selected(self):
+        row = self.table.currentRow()
+        if row < 0:
+            self.show_error("请先选择一条记录")
+            return
+        item = self.table.item(row, 0)
+        if not item:
+            return
+        record_id = int(item.text())
+        self._delete_item(record_id)
 
     def _add_item(self):
         text = self.type_combo.currentText()

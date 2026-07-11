@@ -26,6 +26,9 @@ class LocationPage(BasePage):
 
         self.add_search_button("搜索", self._do_search)
         self.add_header_button("+ 新增库位", self._add_location, "#16A34A")
+        self.add_header_button("编辑", self._edit_selected, "#3498db")
+        self.add_header_button("停用/激活", self._toggle_selected, "#f39c12")
+        self.add_header_button("删除", self._delete_selected, "#DC2626")
         self.set_table_headers([
             "库位编码", "库位名称", "类型", "库存铅封(个)", "状态", "备注",
         ])
@@ -61,38 +64,34 @@ class LocationPage(BasePage):
             f"库位总数: {total_count} | 在库铅封: {total_stock} 个")
         self.populate_table(data)
 
+    def _get_selected_loc(self):
+        row = self.table.currentRow()
+        if row < 0:
+            self.show_error("请先选择一条库位记录")
+            return None
+        code = self.table.item(row, 0).text()
+        return self.loc_dao.get_by_code(code)
+
     def _add_location(self):
         from silicon_manganese_inventory.ui.dialogs.base_eas_dialog import BaseEasDialog
         from PySide6.QtWidgets import QLineEdit, QTextEdit
-        from PySide6.QtCore import Qt as Qtc
 
         class AddLocationDialog(BaseEasDialog):
-            def __init__(self, parent=None, edit_data=None):
-                self.edit_data = edit_data
-                is_edit = edit_data is not None
-                super().__init__(
-                    title="编辑库位" if is_edit else "新增库位",
-                    width=400, height=280, parent=parent)
+            def __init__(self, parent=None):
+                super().__init__(title="新增库位", width=400, height=280, parent=parent)
                 card, cl = self.add_card()
                 self.code_input = QLineEdit()
-                if is_edit:
-                    self.code_input.setText(edit_data.get("code", ""))
-                else:
-                    self.code_input.setPlaceholderText("如 A12 或 Z25")
+                self.code_input.setPlaceholderText("如 A12 或 Z25")
                 self.style_input(self.code_input)
                 self.add_form_row("编码 *", self.code_input, cl)
 
                 self.name_input = QLineEdit()
-                if is_edit:
-                    self.name_input.setText(edit_data.get("name", ""))
                 self.name_input.setPlaceholderText("库位名称")
                 self.style_input(self.name_input)
                 self.add_form_row("名称", self.name_input, cl)
 
                 self.remark_input = QTextEdit()
                 self.remark_input.setMaximumHeight(60)
-                if is_edit:
-                    self.remark_input.setText(edit_data.get("remark", ""))
                 self.remark_input.setPlaceholderText("备注")
                 self.style_textarea(self.remark_input)
                 self.add_form_row("备注", self.remark_input, cl)
@@ -114,12 +113,18 @@ class LocationPage(BasePage):
                 self.show_error("库位编码不能为空")
                 return
             try:
-                self.loc_dao.create(
-                    code=vals["code"], name=vals["name"], remark=vals["remark"])
+                self.loc_dao.create(code=vals["code"], name=vals["name"], remark=vals["remark"])
+                self.show_info(f"库位 {vals['code']} 已新增")
             except Exception as e:
                 self.show_error(str(e))
                 return
             self.refresh()
+
+    def _edit_selected(self):
+        loc = self._get_selected_loc()
+        if not loc:
+            return
+        self._edit_location(loc["id"])
 
     def _edit_location(self, loc_id):
         loc = self.loc_dao.get(loc_id)
@@ -130,9 +135,7 @@ class LocationPage(BasePage):
 
         class EditLocationDialog(BaseEasDialog):
             def __init__(self, edit_data, parent=None):
-                self.edit_data = edit_data
-                super().__init__(
-                    title="编辑库位", width=400, height=280, parent=parent)
+                super().__init__(title="编辑库位", width=400, height=280, parent=parent)
                 card, cl = self.add_card()
                 self.code_input = QLineEdit(edit_data["code"])
                 self.style_input(self.code_input)
@@ -162,10 +165,17 @@ class LocationPage(BasePage):
             vals = dlg.get_values()
             try:
                 self.loc_dao.update(loc_id, name=vals["name"], remark=vals["remark"])
+                self.show_info("库位已更新")
             except Exception as e:
                 self.show_error(str(e))
                 return
             self.refresh()
+
+    def _toggle_selected(self):
+        loc = self._get_selected_loc()
+        if not loc:
+            return
+        self._toggle_active(loc["id"], loc["status"])
 
     def _toggle_active(self, loc_id, current_status):
         new_active = current_status == "inactive"
@@ -176,7 +186,14 @@ class LocationPage(BasePage):
             QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
             self.loc_dao.toggle_active(loc_id, new_active)
+            self.show_info(f"库位已{label}")
             self.refresh()
+
+    def _delete_selected(self):
+        loc = self._get_selected_loc()
+        if not loc:
+            return
+        self._delete_location(loc["id"], loc["code"])
 
     def _delete_location(self, loc_id, code):
         reply = QMessageBox.question(
@@ -186,6 +203,7 @@ class LocationPage(BasePage):
         if reply == QMessageBox.Yes:
             try:
                 self.loc_dao.delete(loc_id)
+                self.show_info(f"库位 {code} 已删除")
             except ValueError as e:
                 self.show_error(str(e))
                 return

@@ -34,6 +34,12 @@ class DatabaseManager:
             row = cur.fetchone()
             if not row or row[0] == 0:
                 conn.execute("ALTER TABLE customers ADD COLUMN is_archived INTEGER DEFAULT 0")
+            cur2 = conn.execute(
+                "SELECT COUNT(*) FROM pragma_table_info('sales_orders') WHERE name='particle_size'"
+            )
+            row2 = cur2.fetchone()
+            if not row2 or row2[0] == 0:
+                conn.execute("ALTER TABLE sales_orders ADD COLUMN particle_size TEXT DEFAULT ''")
         self._seed_defaults()
 
     def backup(self, backup_path):
@@ -168,6 +174,7 @@ CREATE TABLE IF NOT EXISTS sales_orders (
     factory_code TEXT DEFAULT '',
     factory_name TEXT DEFAULT '',
     pickup_method TEXT DEFAULT '',
+    particle_size TEXT DEFAULT '',
     created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
 );
 

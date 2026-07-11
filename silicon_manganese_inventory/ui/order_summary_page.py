@@ -42,6 +42,6 @@ class OrderSummaryPage(BasePage):
     def _export(self):
         export = ExportService(self.db)
         from pathlib import Path
-        path = str(Path.home() / "Desktop" / "订单装车汇总.xlsx")
+        path = str(Path.home() / "Desktop" / "导出订单装车汇总.xlsx")
         export.export_order_summary(path)
         self.show_info(f"已导出到: {path}")

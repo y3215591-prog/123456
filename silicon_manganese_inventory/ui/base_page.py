@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem,
     QPushButton, QLineEdit, QLabel, QComboBox, QHeaderView, QMessageBox,
+    QSizePolicy, QAbstractItemView,
 )
 from PySide6.QtCore import Qt, QTimer
 from silicon_manganese_inventory.utils.preferences import UIPreferences
@@ -46,11 +47,6 @@ class BasePage(QWidget):
         self.search_layout.setSpacing(8)
         self.main_layout.addWidget(self.search_bar)
 
-        self.table_frame = QWidget()
-        self.table_frame.setStyleSheet("background: #FFFFFF;")
-        table_layout = QVBoxLayout(self.table_frame)
-        table_layout.setContentsMargins(8, 8, 8, 8)
-
         self.table = QTableWidget()
         self.table.setAlternatingRowColors(True)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
@@ -61,11 +57,66 @@ class BasePage(QWidget):
         self.table.horizontalHeader().sectionResized.connect(self._on_header_changed)
         self.table.horizontalHeader().sectionMoved.connect(self._on_header_moved)
         self.table.verticalHeader().setVisible(False)
-        table_layout.addWidget(self.table)
-        self.main_layout.addWidget(self.table_frame, 1)
+        self.table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.table.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.table.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
+        self.table.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
+        self.main_layout.addWidget(self.table, 1)
+
+        self._pagination_bar = QWidget()
+        self._pagination_bar.setStyleSheet("background: #FFFFFF; border-top: 1px solid #E2E8F0;")
+        pag_layout = QHBoxLayout(self._pagination_bar)
+        pag_layout.setContentsMargins(16, 4, 16, 4)
+        pag_layout.setSpacing(8)
+
+        pag_layout.addWidget(QLabel("每页显示:"))
+        self._page_size_combo = QComboBox()
+        self._page_size_combo.addItems(["50", "100", "200", "300", "500", "1000"])
+        self._page_size_combo.setCurrentText("100")
+        self._page_size_combo.currentTextChanged.connect(self._on_page_size_changed)
+        self._page_size_combo.setStyleSheet("""
+            QComboBox { border: 1px solid #D1D5DB; border-radius: 3px; padding: 3px 8px;
+                        font-size: 12px; background: #FFFFFF; min-width: 70px; }
+        """)
+        pag_layout.addWidget(self._page_size_combo)
+
+        pag_layout.addStretch()
+
+        self._page_info_label = QLabel("")
+        self._page_info_label.setStyleSheet(
+            "font-size: 12px; color: #6B7280; border: none; background: transparent;")
+        pag_layout.addWidget(self._page_info_label)
+
+        self._prev_btn = QPushButton("\u25C0 上一页")
+        self._prev_btn.setStyleSheet("""
+            QPushButton { background: #FFFFFF; color: #374151; border: 1px solid #D1D5DB;
+                          padding: 3px 10px; border-radius: 3px; font-size: 12px; }
+            QPushButton:hover { background: #F3F4F6; }
+            QPushButton:disabled { color: #D1D5DB; }
+        """)
+        self._prev_btn.clicked.connect(self._prev_page)
+        pag_layout.addWidget(self._prev_btn)
+
+        self._next_btn = QPushButton("下一页 \u25B6")
+        self._next_btn.setStyleSheet("""
+            QPushButton { background: #FFFFFF; color: #374151; border: 1px solid #D1D5DB;
+                          padding: 3px 10px; border-radius: 3px; font-size: 12px; }
+            QPushButton:hover { background: #F3F4F6; }
+            QPushButton:disabled { color: #D1D5DB; }
+        """)
+        self._next_btn.clicked.connect(self._next_page)
+        pag_layout.addWidget(self._next_btn)
+
+        self.main_layout.addWidget(self._pagination_bar)
 
         self.status_layout = QHBoxLayout()
         self.main_layout.addLayout(self.status_layout)
+
+        self._all_rows = []
+        self._current_page = 0
+        self._highlight_col = None
+        self._highlight_threshold = None
 
         self._save_timer = QTimer(self)
         self._save_timer.setSingleShot(True)
@@ -164,18 +215,72 @@ class BasePage(QWidget):
         state = self.table.horizontalHeader().saveState()
         _prefs.save_header_state(self.page_key, state)
 
-    def populate_table(self, rows, highlight_col=None, highlight_threshold=None):
-        self.table.setRowCount(len(rows))
-        for r, row in enumerate(rows):
+    def _page_size(self):
+        return int(self._page_size_combo.currentText())
+
+    def _total_pages(self):
+        if not self._all_rows:
+            return 0
+        return max(1, (len(self._all_rows) + self._page_size() - 1) // self._page_size())
+
+    def _on_page_size_changed(self):
+        self._current_page = 0
+        self._render_page()
+
+    def _prev_page(self):
+        if self._current_page > 0:
+            self._current_page -= 1
+            self._render_page()
+
+    def _next_page(self):
+        if self._current_page < self._total_pages() - 1:
+            self._current_page += 1
+            self._render_page()
+
+    def _render_page(self):
+        size = self._page_size()
+        self._page_start = self._current_page * size
+        end = self._page_start + size
+        page_rows = self._all_rows[self._page_start:end]
+
+        self.table.setRowCount(len(page_rows))
+        for r, row in enumerate(page_rows):
             for c, val in enumerate(row):
                 item = QTableWidgetItem(str(val) if val is not None else "")
-                if highlight_col is not None and c == highlight_col:
+                if self._highlight_col is not None and c == self._highlight_col:
                     try:
-                        if float(val) < highlight_threshold:
+                        if float(val) < self._highlight_threshold:
                             item.setForeground(Qt.red)
                     except (ValueError, TypeError):
                         pass
                 self.table.setItem(r, c, item)
+
+        total = len(self._all_rows)
+        total_pages = self._total_pages()
+        if total == 0:
+            self._page_info_label.setText("共 0 条")
+            self._prev_btn.setEnabled(False)
+            self._next_btn.setEnabled(False)
+        else:
+            self._page_info_label.setText(
+                f"共 {total} 条  第 {self._current_page + 1}/{total_pages} 页")
+            self._prev_btn.setEnabled(self._current_page > 0)
+            self._next_btn.setEnabled(self._current_page < total_pages - 1)
+
+        self._after_render_page()
+
+    def _after_render_page(self):
+        pass
+
+    def _all_rows_index(self, page_row):
+        return self._page_start + page_row
+
+    def populate_table(self, rows, highlight_col=None, highlight_threshold=None):
+        self._all_rows = rows
+        self._highlight_col = highlight_col
+        self._highlight_threshold = highlight_threshold
+        self._current_page = 0
+        self._render_page()
         self.table.resizeColumnsToContents()
 
     def show_error(self, msg):

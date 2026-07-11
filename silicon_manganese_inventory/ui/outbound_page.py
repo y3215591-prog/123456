@@ -99,8 +99,9 @@ class OutboundPage(BasePage):
     def _on_cell_clicked(self, row, col):
         if col == self.SEAL_COL:
             return
-        if 0 <= row < len(self._outbound_ids):
-            outbound_id = self._outbound_ids[row]
+        all_idx = self._all_rows_index(row)
+        if 0 <= all_idx < len(self._outbound_ids):
+            outbound_id = self._outbound_ids[all_idx]
             dlg = OutboundDetailDialog(self.db, outbound_id, self)
             dlg.exec()
 
@@ -112,6 +113,6 @@ class OutboundPage(BasePage):
     def _export(self):
         export = ExportService(self.db)
         from pathlib import Path
-        path = str(Path.home() / "Desktop" / "出库发货.xlsx")
+        path = str(Path.home() / "Desktop" / "导出出库发货.xlsx")
         export.export_outbound(path)
         self.show_info(f"已导出到: {path}")

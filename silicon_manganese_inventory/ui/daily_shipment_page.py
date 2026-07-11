@@ -1,4 +1,5 @@
-from PySide6.QtWidgets import QLineEdit, QFileDialog, QMessageBox
+from PySide6.QtWidgets import QLineEdit, QFileDialog, QMessageBox, QDateEdit, QLabel
+from PySide6.QtCore import QDate
 from silicon_manganese_inventory.ui.base_page import BasePage
 from silicon_manganese_inventory.ui.dialogs.daily_shipment_dialog import DailyShipmentDialog
 from silicon_manganese_inventory.services.report_service import ReportService
@@ -12,12 +13,30 @@ class DailyShipmentPage(BasePage):
         self.report_svc = ReportService(db)
         self.shipment_dao = DailyShipmentDAO(db)
 
-        self.date_from = QLineEdit()
-        self.date_from.setPlaceholderText("开始日期")
-        self.date_to = QLineEdit()
-        self.date_to.setPlaceholderText("结束日期")
+        self.date_from = QDateEdit()
+        self.date_from.setCalendarPopup(True)
+        self.date_from.setDate(QDate.currentDate())
+        self.date_from.setDisplayFormat("yyyy-MM-dd")
+        self.date_from.setStyleSheet("""
+            QDateEdit { border: 1px solid #D1D5DB; border-radius: 3px; padding: 4px 8px;
+                        font-size: 13px; background: #FFFFFF; min-height: 26px; }
+        """)
+        self.date_to = QDateEdit()
+        self.date_to.setCalendarPopup(True)
+        self.date_to.setDate(QDate.currentDate())
+        self.date_to.setDisplayFormat("yyyy-MM-dd")
+        self.date_to.setStyleSheet("""
+            QDateEdit { border: 1px solid #D1D5DB; border-radius: 3px; padding: 4px 8px;
+                        font-size: 13px; background: #FFFFFF; min-height: 26px; }
+        """)
+        self.order_input = QLineEdit()
+        self.order_input.setPlaceholderText("销售订单号")
+        self.plate_input = QLineEdit()
+        self.plate_input.setPlaceholderText("车牌号")
         self.add_search_field("日期:", self.date_from)
         self.add_search_field("-", self.date_to)
+        self.add_search_field("订单号:", self.order_input)
+        self.add_search_field("车牌:", self.plate_input)
         self.add_search_button("搜索", self._do_search)
         self.add_header_button("+ 新增", self._add, "#27ae60")
         self.add_header_button("编辑", self._edit, "#3498db")
@@ -31,29 +50,53 @@ class DailyShipmentPage(BasePage):
         ])
         self.table.setColumnHidden(0, True)
 
+        self.total_label = QLabel("")
+        self.total_label.setStyleSheet(
+            "font-size: 13px; font-weight: bold; color: #2B579A; padding: 4px 8px; "
+            "border: none; background: transparent;")
+        self.status_layout.addWidget(self.total_label)
+
     def _do_search(self):
         self.refresh()
 
     def refresh(self):
         kwargs = {}
-        if self.date_from.text():
-            kwargs["date_from"] = self.date_from.text()
-        if self.date_to.text():
-            kwargs["date_to"] = self.date_to.text()
+        if self.date_from.date().isValid():
+            kwargs["date_from"] = self.date_from.date().toString("yyyy-MM-dd")
+        if self.date_to.date().isValid():
+            kwargs["date_to"] = self.date_to.date().toString("yyyy-MM-dd")
+        if self.order_input.text():
+            kwargs["sales_order_no"] = self.order_input.text()
+        if self.plate_input.text():
+            kwargs["plate_no"] = self.plate_input.text()
         rows = self.report_svc.get_daily_shipment_report(**kwargs)
         data = []
+        totals = {"load": 0.0, "gross": 0.0, "tare": 0.0, "net": 0.0, "received": 0.0}
         for r in rows:
+            load_qty = float(r["load_quantity"] or 0)
+            gross = float(r["gross_weight"] or 0)
+            tare = float(r["tare_weight"] or 0)
+            net = float(r["net_weight"] or 0)
+            received = float(r["customer_received_weight"] or 0)
+            totals["load"] += load_qty
+            totals["gross"] += gross
+            totals["tare"] += tare
+            totals["net"] += net
+            totals["received"] += received
             data.append([
                 r["id"] or "", r["seq_no"] or "", r["shipment_date"] or "",
                 r["plate_no"] or "", r["customer_code"] or "",
                 r["customer_name"] or "", r["sales_order_no"] or "",
                 r["material_name"] or "", r["spec"] or "",
-                r["batch_no"] or "", r["load_quantity"] or "",
-                r["gross_weight"] or "", r["tare_weight"] or "",
-                r["net_weight"] or "", r["customer_received_weight"] or "",
+                r["batch_no"] or "", load_qty,
+                gross, tare, net, received,
                 r["seal_codes"] or "", r["remark"] or "",
             ])
         self.populate_table(data)
+        self.total_label.setText(
+            f"共 {len(rows)} 条 | 装车: {totals['load']:.2f}吨 | "
+            f"毛重: {totals['gross']:.2f} | 皮重: {totals['tare']:.2f} | "
+            f"净重: {totals['net']:.2f} | 收货净重: {totals['received']:.2f}")
 
     def _add(self):
         dlg = DailyShipmentDialog(self.db, self)
@@ -76,17 +119,21 @@ class DailyShipmentPage(BasePage):
 
     def _export(self):
         kwargs = {}
-        if self.date_from.text():
-            kwargs["date_from"] = self.date_from.text()
-        if self.date_to.text():
-            kwargs["date_to"] = self.date_to.text()
+        if self.date_from.date().isValid():
+            kwargs["date_from"] = self.date_from.date().toString("yyyy-MM-dd")
+        if self.date_to.date().isValid():
+            kwargs["date_to"] = self.date_to.date().toString("yyyy-MM-dd")
+        if self.order_input.text():
+            kwargs["sales_order_no"] = self.order_input.text()
+        if self.plate_input.text():
+            kwargs["plate_no"] = self.plate_input.text()
         include_seals = QMessageBox.question(
             self, "导出选项", "是否在导出中包含铅封号列?",
             QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes,
         ) == QMessageBox.Yes
         export = ExportService(self.db)
         from pathlib import Path
-        path = str(Path.home() / "Desktop" / "每日发货明细.xlsx")
+        path = str(Path.home() / "Desktop" / "导出每日发货明细.xlsx")
         export.export_daily_shipments(path, include_seals=include_seals, **kwargs)
         self.show_info(f"已导出到: {path}")
 
