@@ -26,8 +26,8 @@ class InventoryBalanceDialog(BaseEasDialog):
 
         self.table = QTableWidget()
         self.table.setAlternatingRowColors(True)
-        self.table.setSelectionBehavior(self.table.SelectRows)
-        self.table.setEditTriggers(self.table.NoEditTriggers)
+        self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.verticalHeader().setVisible(False)
         self.table.setColumnCount(7)
