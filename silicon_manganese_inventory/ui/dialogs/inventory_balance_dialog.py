@@ -2,6 +2,7 @@ from PySide6.QtWidgets import (
     QTableWidget, QTableWidgetItem, QHeaderView, QLabel,
 )
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QFont
 from silicon_manganese_inventory.ui.dialogs.base_eas_dialog import BaseEasDialog
 
 
@@ -74,4 +75,30 @@ class InventoryBalanceDialog(BaseEasDialog):
                     else:
                         w.setForeground(Qt.darkGreen)
                 self.table.setItem(r_idx, c_idx, w)
+
+        # Add total row
+        total_row = len(items)
+        self.table.insertRow(total_row)
+        total_excel = sum(it["balance"] for it in items)
+        total_sys = sum(sys_data.get((it["batch_no"], it["location"]), 0) for it in items)
+        total_diff = total_excel - total_sys
+        total_status = "一致" if total_diff == 0 else ("盘盈" if total_diff > 0 else "盘亏")
+
+        bold_font = QFont()
+        bold_font.setBold(True)
+        total_data = ["合计", str(len(items)) + " 个库位", str(total_excel), "",
+                       str(total_sys), str(total_diff), total_status]
+        for c_idx, val in enumerate(total_data):
+            w = QTableWidgetItem(val)
+            w.setFont(bold_font)
+            w.setBackground(Qt.lightGray)
+            if c_idx == 5 or c_idx == 6:
+                if total_diff > 0:
+                    w.setForeground(Qt.red)
+                elif total_diff < 0:
+                    w.setForeground(Qt.darkYellow)
+                else:
+                    w.setForeground(Qt.darkGreen)
+            self.table.setItem(total_row, c_idx, w)
+
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
