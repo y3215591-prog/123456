@@ -185,8 +185,8 @@ class TestLocationDAO:
 
     def test_create_and_list(self, dao):
         before = len(dao.list())
-        dao.create("A01", "库位A01")
-        dao.create("A02", "库位A02")
+        dao.create("TEST01", "测试库位1")
+        dao.create("TEST02", "测试库位2")
         results = dao.list()
         assert len(results) == before + 2
 

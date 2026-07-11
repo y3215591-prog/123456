@@ -60,11 +60,7 @@ class DatabaseManager:
             conn.execute(
                 "INSERT OR IGNORE INTO warehouses (id, name, address) VALUES (1, '成品库', '')"
             )
-            for code, name, wh_id in config.DEFAULT_LOCATIONS:
-                conn.execute(
-                    "INSERT OR IGNORE INTO locations (code, name, warehouse_id) VALUES (?, ?, ?)",
-                    (code, name, wh_id),
-                )
+            self._seed_loc_tuples(conn)
             for name, mn, si, remark in config.DEFAULT_SPECS:
                 conn.execute(
                     "INSERT OR IGNORE INTO specs (name, mn_content, si_content, remark) VALUES (?, ?, ?, ?)",
@@ -75,6 +71,17 @@ class DatabaseManager:
                     "INSERT OR IGNORE INTO lab_standards (element, min_value, max_value) VALUES (?, ?, ?)",
                     (element, min_val, max_val),
                 )
+
+    def seed_default_locations(self):
+        with self.get_connection() as conn:
+            self._seed_loc_tuples(conn)
+
+    def _seed_loc_tuples(self, conn):
+        for code, name, wh_id in config.DEFAULT_LOCATIONS:
+            conn.execute(
+                "INSERT OR IGNORE INTO locations (code, name, warehouse_id) VALUES (?, ?, ?)",
+                (code, name, wh_id),
+            )
 
     def reset_business_data(self):
         with self.get_connection() as conn:

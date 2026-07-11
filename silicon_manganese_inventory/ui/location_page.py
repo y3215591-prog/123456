@@ -27,6 +27,7 @@ class LocationPage(BasePage):
         self.add_search_button("搜索", self._do_search)
         self.add_header_button("+ 新增库位", self._add_location, "#16A34A")
         self.add_header_button("编辑", self._edit_selected, "#3498db")
+        self.add_header_button("初始化默认库位", self._seed_default_locations, "#8B5CF6")
         self.add_header_button("停用/激活", self._toggle_selected, "#f39c12")
         self.add_header_button("删除", self._delete_selected, "#DC2626")
         self.set_table_headers([
@@ -170,6 +171,15 @@ class LocationPage(BasePage):
                 self.show_error(str(e))
                 return
             self.refresh()
+
+    def _seed_default_locations(self):
+        try:
+            self.db.seed_default_locations()
+            self.show_info("默认库位已初始化 (INSERT OR IGNORE)")
+        except Exception as e:
+            self.show_error(str(e))
+            return
+        self.refresh()
 
     def _toggle_selected(self):
         loc = self._get_selected_loc()
