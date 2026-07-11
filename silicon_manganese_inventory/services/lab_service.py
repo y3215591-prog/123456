@@ -25,7 +25,7 @@ class LabService:
             c_r = self._judge_element("C", c_content)
             s_r = self._judge_element("S", s_content)
             p_r = self._judge_element("P", p_content)
-            all_results = [mn_r, si_r, c_r, s_r, p_r]
+            all_results = [r for r in [mn_r, si_r, c_r, s_r, p_r] if r != "skipped"]
             overall_result = "合格" if all(r == "合格" for r in all_results) else "不合格"
         return self.dao.save_result(
             pre_inbound_id,
@@ -40,11 +40,11 @@ class LabService:
 
     def _judge_element(self, element, value):
         if value is None:
-            return ""
+            return "skipped"
         standards = self._get_standards()
         std = next((s for s in standards if s["element"] == element), None)
         if not std:
-            return ""
+            return "skipped"
         if std["min_value"] <= value <= std["max_value"]:
             return "合格"
         return "不合格"

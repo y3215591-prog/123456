@@ -1,7 +1,7 @@
 from silicon_manganese_inventory.dao.database import DatabaseManager
 
 SEAL_ALLOWED = {"status", "pre_inbound_id", "inbound_id", "outbound_id",
-                "batch_no", "location_code", "batch_code"}
+                "batch_no", "location_code"}
 
 
 class SealDAO:

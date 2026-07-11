@@ -92,9 +92,12 @@ class BasicDataPage(BasePage):
         if text == "品名规格":
             r = self.spec_dao.get(record_id)
             name, ok = QInputDialog.getText(self, "编辑品名规格", "规格名称:", text=r["name"])
-            if ok and name.strip():
-                remark, _ = QInputDialog.getText(self, "编辑备注", "备注:", text=r["remark"] or "")
-                self.spec_dao.update(record_id, name=name.strip(), remark=remark)
+            if not ok or not name.strip():
+                return
+            remark, ok2 = QInputDialog.getText(self, "编辑备注", "备注:", text=r["remark"] or "")
+            if not ok2:
+                return
+            self.spec_dao.update(record_id, name=name.strip(), remark=remark)
         elif text == "检验标准":
             element = self.table.item(row, 1).text()
             min_val = float(self.table.item(row, 2).text())
@@ -107,15 +110,19 @@ class BasicDataPage(BasePage):
                 return
             self.lab_dao.update_standard(element, new_min, new_max)
         elif text == "仓库":
-            r = self.warehouse_dao.list()
-            r = next((x for x in r if x["id"] == record_id), None)
+            r = self.warehouse_dao.get(record_id)
             if not r:
                 return
             name, ok = QInputDialog.getText(self, "编辑仓库", "仓库名称:", text=r["name"])
-            if ok and name.strip():
-                addr, _ = QInputDialog.getText(self, "编辑地址", "地址:", text=r["address"] or "")
-                remark, _ = QInputDialog.getText(self, "编辑备注", "备注:", text=r["remark"] or "")
-                self.warehouse_dao.update(record_id, name=name.strip(), address=addr, remark=remark)
+            if not ok or not name.strip():
+                return
+            addr, ok2 = QInputDialog.getText(self, "编辑地址", "地址:", text=r["address"] or "")
+            if not ok2:
+                return
+            remark, ok3 = QInputDialog.getText(self, "编辑备注", "备注:", text=r["remark"] or "")
+            if not ok3:
+                return
+            self.warehouse_dao.update(record_id, name=name.strip(), address=addr, remark=remark)
         self.refresh()
 
     def _delete_item(self, record_id):

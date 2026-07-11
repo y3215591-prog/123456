@@ -137,6 +137,8 @@ class BasePage(QWidget):
             self._restoring = False
             return
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        if hasattr(self, '_auto_fit_timer') and self._auto_fit_timer is not None:
+            self._auto_fit_timer.stop()
         self._auto_fit_timer = QTimer(self)
         self._auto_fit_timer.setSingleShot(True)
         self._auto_fit_timer.timeout.connect(self._initial_auto_fit_done)

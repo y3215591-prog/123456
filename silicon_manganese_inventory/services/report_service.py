@@ -9,6 +9,7 @@ class ReportService:
 
     def get_inventory_report(self, location_code=None, batch_no=None):
         with self.db.get_connection() as conn:
+            conn.execute("PRAGMA group_concat_max_len = 1000000")
             conditions = ["sn.status='in_stock'"]
             params = []
             if location_code:

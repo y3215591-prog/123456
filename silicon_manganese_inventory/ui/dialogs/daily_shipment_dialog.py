@@ -57,11 +57,6 @@ class DailyShipmentDialog(BaseEasDialog):
         self.edit_record = edit_record
         self._batch_widgets = []
 
-        with self.db.get_connection() as conn:
-            self._next_seq = (conn.execute(
-                "SELECT COALESCE(MAX(seq_no), 0) + 1 FROM daily_shipments"
-            ).fetchone()[0])
-
         super().__init__(
             title="编辑发货明细" if edit_record else "新增发货明细",
             width=660, height=640, parent=parent,
@@ -86,11 +81,13 @@ class DailyShipmentDialog(BaseEasDialog):
         seq_widget = QWidget()
         seq_inner = QHBoxLayout(seq_widget)
         seq_inner.setContentsMargins(0, 0, 0, 0)
-        self.seq_label = QLabel(str(self._next_seq))
+        self.seq_label = QLabel("")
         self.seq_label.setMinimumWidth(80)
         seq_inner.addWidget(self.seq_label)
         seq_inner.addStretch()
         self.add_form_row("序号:", seq_widget, cl)
+
+        self._load_seq_no()
 
         self.date_input = QLineEdit(datetime.now().strftime("%Y-%m-%d"))
         self.style_input(self.date_input)
@@ -237,9 +234,19 @@ class DailyShipmentDialog(BaseEasDialog):
         if gross > 0 and tare > 0:
             self.net_input.setValue(round(gross - tare, 2))
 
+    def _load_seq_no(self):
+        if self.edit_record:
+            self.seq_label.setText(str(self.edit_record["seq_no"] or ""))
+        else:
+            with self.db.get_connection() as conn:
+                self._next_seq = (conn.execute(
+                    "SELECT COALESCE(MAX(seq_no), 0) + 1 FROM daily_shipments"
+                ).fetchone()[0])
+                self.seq_label.setText(str(self._next_seq))
+
     def _load_record(self):
         r = self.edit_record
-        self.seq_label.setText(str(r["seq_no"] or ""))
+        self._load_seq_no()
         self.date_input.setText(r["shipment_date"] or "")
         self.plate_input.setText(r["plate_no"] or "")
         self.order_input.setText(r["sales_order_no"] or "")
@@ -251,9 +258,6 @@ class DailyShipmentDialog(BaseEasDialog):
         self.remark_input.setText(r["remark"] or "")
 
         batch_no_str = r["batch_no"] or ""
-
-    def _save(self):
-        ...
         if batch_no_str:
             batches = [b.strip() for b in batch_no_str.split(",") if b.strip()]
             self._batch_widgets[0].batch_input.setText(batches[0] if batches else "")
@@ -286,12 +290,19 @@ class DailyShipmentDialog(BaseEasDialog):
 
         batch_no_str = ",".join(batches)
 
+        cust_name = self.cust_name_label.text().strip()
+        if cust_name in ("-", "(未找到订单)"):
+            cust_name = ""
+        cust_code = self.cust_code_label.text().strip()
+        if cust_code in ("-", "(未找到订单)"):
+            cust_code = ""
+
         kwargs = {
             "seq_no": seq_no,
             "shipment_date": self.date_input.text(),
             "plate_no": self.plate_input.text(),
-            "customer_code": self.cust_code_label.text().strip(),
-            "customer_name": self.cust_name_label.text().strip(),
+            "customer_code": cust_code,
+            "customer_name": cust_name,
             "sales_order_no": self.order_input.text().strip(),
             "material_name": "",
             "spec": "",

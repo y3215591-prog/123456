@@ -7,7 +7,7 @@ from silicon_manganese_inventory.dao.base_dao import (
     OperationLogDAO,
 )
 from silicon_manganese_inventory.services.seal_service import (
-    SealService, SealInsufficientError,
+    SealService, SealInsufficientError, SealStatusError,
 )
 from silicon_manganese_inventory.dao.outbound_dao import OutboundDAO
 
@@ -405,9 +405,9 @@ class ExcelService:
                             f"发货铅封: {seal_start}~{seal_end} ({qty}个), "
                             f"批次={batch_no}, 库位={location}, 订单={order_no}",
                             operator)
-            except SealInsufficientError:
+            except (SealInsufficientError, SealStatusError) as e:
                 log_dao.log("ship_failed", "seal_numbers", outbound_id,
-                            f"发货失败-库存不足: 批次={batch_no}, 库位={location}, "
+                            f"发货失败: {e}, 批次={batch_no}, 库位={location}, "
                             f"需求{qty}个",
                             operator)
 

@@ -121,15 +121,19 @@ class PreInboundDialog(BaseEasDialog):
 
     def _load_record(self):
         r = self.edit_record
-        self.date_input.setText(r["date"])
-        self.batch_input.setText(r["batch_no"])
+        self.date_input.setText(r["date"] or "")
+        self.batch_input.setText(r["batch_no"] or "")
         idx = self.spec_combo.findData(r["spec_id"])
         if idx >= 0:
             self.spec_combo.setCurrentIndex(idx)
-        self.quantity_input.setValue(int(r["quantity"]))
-        idx = self.location_combo.findText(r["location_code"])
-        if idx >= 0:
-            self.location_combo.setCurrentIndex(idx)
+        self.quantity_input.setValue(int(r["quantity"] or 0))
+        loc_code = r["location_code"]
+        if loc_code:
+            idx = self.location_combo.findData(loc_code)
+            if idx >= 0:
+                self.location_combo.setCurrentIndex(idx)
+            else:
+                self.location_combo.setCurrentText(loc_code)
         idx = self.seal_batch_combo.findData(r["seal_batch_id"])
         if idx >= 0:
             self.seal_batch_combo.setCurrentIndex(idx)
@@ -151,12 +155,10 @@ class PreInboundDialog(BaseEasDialog):
         if isinstance(spec_id, str):
             spec_id = None
         location = self.location_combo.currentData()
-        if location:
+        if not location:
             raw_text = self.location_combo.currentText().strip()
-            if raw_text != location and not self.location_combo.findData(raw_text):
+            if raw_text:
                 location = raw_text
-        else:
-            location = self.location_combo.currentText().strip()
         if location:
             loc_dao = LocationDAO(self.db)
             location = loc_dao.get_or_create(location)

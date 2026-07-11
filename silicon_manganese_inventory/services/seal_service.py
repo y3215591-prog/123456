@@ -1,5 +1,5 @@
 from silicon_manganese_inventory.dao.database import DatabaseManager
-from silicon_manganese_inventory.dao.seal_dao import SealDAO
+from silicon_manganese_inventory.dao.seal_dao import SealDAO, SEAL_ALLOWED
 
 
 class SealStatusError(Exception):
@@ -137,4 +137,23 @@ class SealService:
                 if new_status not in ALLOWED_TRANSITIONS.get(current, []):
                     raise SealStatusError(
                         f"不允许状态流转: {current} -> {new_status} (铅封号 {seal_id})")
-            self.dao.update_seal_status_batch(seal_ids, new_status, conn=conn, **kwargs)
+            safe_kwargs = {k: v for k, v in kwargs.items() if k in SEAL_ALLOWED}
+            setters = ["status=?", "updated_at=datetime('now','localtime')"]
+            values = [new_status]
+            for key, val in safe_kwargs.items():
+                setters.append(f"{key}=?")
+                values.append(val)
+            for seal_id in seal_ids:
+                current = found[seal_id]
+                params = values + [seal_id, current]
+                result = conn.execute(
+                    f"UPDATE seal_numbers SET {', '.join(setters)} WHERE id=? AND status=?",
+                    params,
+                )
+                if result.rowcount == 0:
+                    actual = conn.execute(
+                        "SELECT status FROM seal_numbers WHERE id=?", (seal_id,)
+                    ).fetchone()
+                    actual_status = actual["status"] if actual else "不存在"
+                    raise SealStatusError(
+                        f"并发冲突: 铅封号 {seal_id} 状态已变更为 {actual_status}")

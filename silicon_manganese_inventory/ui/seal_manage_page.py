@@ -82,7 +82,6 @@ class SealManagePage(BasePage):
 
     def refresh(self):
         status = self.status_combo.currentData()
-        batch_id = self.batch_combo.currentData()
 
         batches = self.seal_dao.list_batches()
         current_bid = self.batch_combo.currentData()
@@ -97,6 +96,8 @@ class SealManagePage(BasePage):
         if idx >= 0:
             self.batch_combo.setCurrentIndex(idx)
         self.batch_combo.blockSignals(False)
+
+        batch_id = self.batch_combo.currentData()
 
         offset = self._current_page * PAGE_SIZE
         if batch_id:

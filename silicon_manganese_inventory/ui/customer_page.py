@@ -29,6 +29,8 @@ class CustomerPage(BasePage):
         self.table.setContextMenuPolicy(Qt.CustomContextMenu)
         self.table.customContextMenuRequested.connect(self._on_context_menu)
         self.set_table_headers(["ID", "代码", "名称", "联系人", "电话", "地址", "备注"])
+        self._update_archive_btn_visible()
+        self.refresh()
 
     def _on_type_changed(self, text):
         self._update_archive_btn_visible()

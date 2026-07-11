@@ -39,7 +39,7 @@ class DatabaseManager:
         dst = os.path.abspath(backup_path)
         os.makedirs(os.path.dirname(dst), exist_ok=True)
         with self.get_connection() as conn:
-            conn.execute("VACUUM INTO ?", (dst,))
+            conn.execute(f"VACUUM INTO '{dst}'")
         return dst
 
     def restore(self, backup_path):

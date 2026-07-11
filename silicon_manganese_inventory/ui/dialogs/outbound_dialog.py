@@ -215,12 +215,19 @@ class OutboundDialog(BaseEasDialog):
         location = self.location_combo.currentData()
         if not location:
             location = self.location_combo.currentText().strip()
-        if location:
-            loc_dao = LocationDAO(self.db)
-            location = loc_dao.get_or_create(location)
+        if not location:
+            QMessageBox.warning(self, "错误", "请选择出库库位")
+            return
+        loc_dao = LocationDAO(self.db)
+        location = loc_dao.get_or_create(location)
         spec_id = self.spec_combo.currentData()
         if isinstance(spec_id, str):
-            spec_id = None
+            spec_name = self.spec_combo.currentText().strip()
+            if spec_name:
+                spec_dao = SpecDAO(self.db)
+                spec_id = spec_dao.create(name=spec_name)
+            else:
+                spec_id = None
         cust_id = self.customer_combo.currentData()
         if isinstance(cust_id, str):
             cust_id = None

@@ -248,6 +248,16 @@ class SpecDAO:
                 "SELECT COUNT(*) FROM pre_inbound_orders WHERE spec_id=?",
                 (spec_id,),
             ).fetchone()[0]
+            if has == 0:
+                has = conn.execute(
+                    "SELECT COUNT(*) FROM inbound_orders WHERE spec_id=?",
+                    (spec_id,),
+                ).fetchone()[0]
+            if has == 0:
+                has = conn.execute(
+                    "SELECT COUNT(*) FROM outbound_orders WHERE spec_id=?",
+                    (spec_id,),
+                ).fetchone()[0]
             if has > 0:
                 raise ValueError("该规格存在业务记录，无法删除")
             conn.execute("DELETE FROM specs WHERE id=?", (spec_id,))
@@ -297,11 +307,21 @@ class WarehouseDAO:
             ).fetchone()[0]
             if has > 0:
                 raise ValueError("该仓库存在库存记录，无法删除")
+            has_locs = conn.execute(
+                "SELECT COUNT(*) FROM locations WHERE warehouse_id=?",
+                (warehouse_id,),
+            ).fetchone()[0]
+            if has_locs > 0:
+                conn.execute("DELETE FROM locations WHERE warehouse_id=?", (warehouse_id,))
             conn.execute("DELETE FROM warehouses WHERE id=?", (warehouse_id,))
 
     def list(self):
         with self.db.get_connection() as conn:
             return conn.execute("SELECT * FROM warehouses ORDER BY id").fetchall()
+
+    def get(self, warehouse_id):
+        with self.db.get_connection() as conn:
+            return conn.execute("SELECT * FROM warehouses WHERE id=?", (warehouse_id,)).fetchone()
 
 
 class SalesOrderDAO:

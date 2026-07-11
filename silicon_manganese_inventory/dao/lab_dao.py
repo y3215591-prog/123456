@@ -27,7 +27,7 @@ class LabDAO:
                  kwargs.get("mn_result", ""), kwargs.get("si_result", ""),
                  kwargs.get("c_result", ""), kwargs.get("s_result", ""),
                  kwargs.get("p_result", ""), kwargs.get("overall_result", ""),
-                 kwargs.get("test_date", ""), kwargs.get("remark", "")),
+                  kwargs.get("test_date") or None, kwargs.get("remark", "")),
             )
             conn.execute(
                 "UPDATE pre_inbound_orders SET lab_status='tested', updated_at=datetime('now','localtime') WHERE id=?",
