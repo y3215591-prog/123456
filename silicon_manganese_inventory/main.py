@@ -1,4 +1,5 @@
 import sys
+import os
 from PySide6.QtWidgets import QApplication
 from silicon_manganese_inventory.utils.logger import get_logger, install_excepthook
 from silicon_manganese_inventory.utils.theme_manager import ThemeManager
@@ -11,6 +12,17 @@ def main():
     app = QApplication(sys.argv)
     app.setApplicationName("SiliconMnInventory")
     app.setApplicationDisplayName("硅锰合金库存管理系统")
+
+    # App-wide icon
+    icon_paths = [
+        os.path.join(os.path.dirname(__file__), "resources", "app_icon.png"),
+        os.path.join(os.path.dirname(__file__), "resources", "app_icon.ico"),
+    ]
+    for p in icon_paths:
+        if os.path.exists(p):
+            from PySide6.QtGui import QIcon
+            app.setWindowIcon(QIcon(p))
+            break
 
     from silicon_manganese_inventory.ui.style import STYLE_QSS
     tm = ThemeManager.instance()

@@ -2,6 +2,7 @@ from PySide6.QtWidgets import (
     QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QStackedWidget,
     QStatusBar, QLabel, QComboBox, QPushButton, QMessageBox,
 )
+from PySide6.QtGui import QIcon
 from datetime import datetime
 from silicon_manganese_inventory.services.report_service import ReportService
 from silicon_manganese_inventory.ui.navbar import NavBar
@@ -44,6 +45,7 @@ class MainWindow(QMainWindow):
         self.logger.info("主窗口初始化")
         self.setWindowTitle("硅锰合金库存管理系统")
         self.setMinimumSize(1280, 800)
+        self._load_icon()
         self._tm = ThemeManager.instance()
         self._setup_ui()
         self._connect_signals()
@@ -144,6 +146,17 @@ class MainWindow(QMainWindow):
         self.setStatusBar(self.status_bar)
         self._apply_theme()
         self._refresh_status_bar()
+
+    def _load_icon(self):
+        import os
+        possible_paths = [
+            os.path.join(os.path.dirname(os.path.dirname(__file__)), "resources", "app_icon.png"),
+            os.path.join(os.path.dirname(os.path.dirname(__file__)), "resources", "app_icon.ico"),
+        ]
+        for p in possible_paths:
+            if os.path.exists(p):
+                self.setWindowIcon(QIcon(p))
+                return
 
     def _apply_theme(self):
         t = self._tm.current

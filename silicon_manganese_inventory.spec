@@ -5,7 +5,10 @@ a = Analysis(
     ['silicon_manganese_inventory/main.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[
+        ('silicon_manganese_inventory/resources/app_icon.png', 'silicon_manganese_inventory/resources'),
+        ('silicon_manganese_inventory/resources/app_icon.ico', 'silicon_manganese_inventory/resources'),
+    ],
     hiddenimports=collect_submodules('openpyxl') + [
         'silicon_manganese_inventory',
         'silicon_manganese_inventory.config',
@@ -83,6 +86,7 @@ exe = EXE(
     a.datas,
     [],
     name='硅锰合金库存管理系统',
+    icon='silicon_manganese_inventory/resources/app_icon.ico',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

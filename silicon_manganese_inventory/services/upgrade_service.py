@@ -70,44 +70,83 @@ class UpgradeService:
         log_lines.append(f"升级包: {zip_path}")
         log_lines.append("")
 
-        with zipfile.ZipFile(zip_path, "r") as zf:
-            members = zf.namelist()
-            log_lines.append(f"ZIP 包含 {len(members)} 个文件/目录")
+        replaced_files = []
+        has_error = False
+        error_msg = ""
 
-            for member in members:
-                if member.endswith("/"):
-                    continue
-                parts = member.replace("\\", "/").split("/")
-                for i in range(len(parts)):
-                    if parts[i] in ("123456-master", "123456-main", parts[0]):
-                        if i + 1 < len(parts):
-                            parts = parts[i + 1:]
-                            break
+        try:
+            with zipfile.ZipFile(zip_path, "r") as zf:
+                members = zf.namelist()
+                log_lines.append(f"ZIP 包含 {len(members)} 个文件/目录")
 
-                rel_path = "/".join(parts)
-                dest = app_root / rel_path
-                dest.parent.mkdir(parents=True, exist_ok=True)
+                for member in members:
+                    if member.endswith("/"):
+                        continue
+                    parts = member.replace("\\", "/").split("/")
+                    for i in range(len(parts)):
+                        if parts[i] in ("123456-master", "123456-main", parts[0]):
+                            if i + 1 < len(parts):
+                                parts = parts[i + 1:]
+                                break
 
-                if dest.name.endswith(".db"):
-                    log_lines.append(f"  跳过数据库: {rel_path}")
-                    continue
-                if dest.name == "_upgrade_backup":
-                    log_lines.append(f"  跳过备份目录: {rel_path}")
-                    continue
+                    rel_path = "/".join(parts)
+                    dest = app_root / rel_path
+                    dest.parent.mkdir(parents=True, exist_ok=True)
 
+                    if dest.name.endswith(".db"):
+                        log_lines.append(f"  跳过数据库: {rel_path}")
+                        continue
+                    if dest.name == "_upgrade_backup":
+                        log_lines.append(f"  跳过备份目录: {rel_path}")
+                        continue
+
+                    try:
+                        content = zf.read(member)
+                        with open(dest, "wb") as f:
+                            f.write(content)
+                        replaced_files.append(str(dest))
+                        log_lines.append(f"  更新: {rel_path}")
+                    except Exception as e:
+                        has_error = True
+                        error_msg = f"{rel_path}: {e}"
+                        log_lines.append(f"  失败: {error_msg}")
+                        break
+
+            if has_error:
+                log_lines.append("")
+                log_lines.append("升级过程中出现错误，正在自动回滚...")
+                for fpath in reversed(replaced_files):
+                    try:
+                        backup_f = get_backup_dir() / Path(fpath).relative_to(app_root)
+                        if backup_f.exists():
+                            shutil.copy2(str(backup_f), fpath)
+                            log_lines.append(f"  回滚: {Path(fpath).relative_to(app_root)}")
+                    except Exception as re:
+                        log_lines.append(f"  回滚失败: {re}")
+                log_lines.append("已回滚到升级前版本")
+        except Exception as e:
+            has_error = True
+            error_msg = str(e)
+            log_lines.append(f"升级异常: {e}")
+            log_lines.append("正在自动回滚...")
+            for fpath in reversed(replaced_files):
                 try:
-                    content = zf.read(member)
-                    with open(dest, "wb") as f:
-                        f.write(content)
-                    log_lines.append(f"  更新: {rel_path}")
-                except Exception as e:
-                    log_lines.append(f"  失败: {rel_path} - {e}")
+                    backup_f = get_backup_dir() / Path(fpath).relative_to(app_root)
+                    if backup_f.exists():
+                        shutil.copy2(str(backup_f), fpath)
+                        log_lines.append(f"  回滚: {Path(fpath).relative_to(app_root)}")
+                except Exception:
+                    pass
+            log_lines.append("已回滚到升级前版本")
 
         log_lines.append("")
-        log_lines.append("升级完成")
+        log_lines.append("升级完成" if not has_error else f"升级失败: {error_msg}")
         log_path = app_root / "upgrade_log.txt"
         with open(log_path, "w", encoding="utf-8") as f:
             f.write("\n".join(log_lines))
+
+        if has_error:
+            raise RuntimeError(error_msg)
 
         return len(members)
 
