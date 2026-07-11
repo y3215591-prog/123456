@@ -77,12 +77,12 @@ class OutboundPage(BasePage):
             if r["seal_start"]:
                 seal_text = f"{r['seal_start']}~{r['seal_end']} ({r['quantity']}个)"
             data.append([
-                r["order_no"], r["date"], r.get("batch_nos", ""),
-                r.get("spec_name", "") or "",
-                r["quantity"], r.get("customer_name", "") or "",
-                r["sales_order_no"] or "", r.get("contract_no", "") or "",
+                r["order_no"], r["date"], r["batch_nos"] or "",
+                r["spec_name"] or "",
+                r["quantity"], r["customer_name"] or "",
+                r["sales_order_no"] or "", r["contract_no"] or "",
                 seal_text,
-                r.get("plate_no", "") or "", r["operator"], r["remark"] or "",
+                r["plate_no"] or "", r["operator"], r["remark"] or "",
                 remaining,
             ])
         self.populate_table(data)

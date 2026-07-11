@@ -66,7 +66,7 @@ class PreInboundPage(BasePage):
         data = []
         for r in rows:
             seal_range = f"{r['seal_start']}~{r['seal_end']}" if r["seal_start"] else ""
-            status_text = "已入库" if r.get("inbound_status") == "confirmed" else "未入库"
+            status_text = "已入库" if r["inbound_status"] == "confirmed" else "未入库"
             data.append([
                 r["order_no"], r["date"], r["batch_no"], r["quantity"],
                 r["location_code"], seal_range,

@@ -72,29 +72,31 @@ class BasePage(QWidget):
         self._save_timer.setInterval(500)
         self._save_timer.timeout.connect(self._save_header_state)
 
-    def add_search_field(self, label, widget):
+    def add_search_field(self, label, widget, persist=True):
         lbl = QLabel(label)
         lbl.setStyleSheet("font-size: 13px; color: #6B7280; border: none; background: transparent;")
         self.search_layout.addWidget(lbl)
         self.search_layout.addWidget(widget)
         self._filter_widgets.append(widget)
         field_idx = len(self._filter_widgets) - 1
-        saved = _prefs.load_filter(self.page_key, field_idx)
-        if saved:
+        if persist:
+            saved = _prefs.load_filter(self.page_key, field_idx)
+            if saved:
+                if isinstance(widget, QComboBox):
+                    idx = widget.findText(saved)
+                    if idx >= 0:
+                        widget.setCurrentIndex(idx)
+                    else:
+                        widget.setCurrentText(saved)
+                elif isinstance(widget, QLineEdit):
+                    widget.setText(saved)
+        if persist:
             if isinstance(widget, QComboBox):
-                idx = widget.findText(saved)
-                if idx >= 0:
-                    widget.setCurrentIndex(idx)
-                else:
-                    widget.setCurrentText(saved)
+                widget.currentTextChanged.connect(
+                    lambda val, i=field_idx: _prefs.save_filter(self.page_key, i, val))
             elif isinstance(widget, QLineEdit):
-                widget.setText(saved)
-        if isinstance(widget, QComboBox):
-            widget.currentTextChanged.connect(
-                lambda val, i=field_idx: _prefs.save_filter(self.page_key, i, val))
-        elif isinstance(widget, QLineEdit):
-            widget.textChanged.connect(
-                lambda val, i=field_idx: _prefs.save_filter(self.page_key, i, val))
+                widget.textChanged.connect(
+                    lambda val, i=field_idx: _prefs.save_filter(self.page_key, i, val))
 
     def add_search_button(self, text, callback):
         btn = QPushButton(text)
@@ -172,6 +174,7 @@ class BasePage(QWidget):
                     except (ValueError, TypeError):
                         pass
                 self.table.setItem(r, c, item)
+        self.table.resizeColumnsToContents()
 
     def show_error(self, msg):
         QMessageBox.warning(self, "错误", msg)

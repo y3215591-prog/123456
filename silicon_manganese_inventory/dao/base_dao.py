@@ -116,7 +116,7 @@ class SupplierDAO:
 
 
 class LocationDAO:
-    _ALLOWED = {"code", "name", "warehouse_id", "remark"}
+    _ALLOWED = {"code", "name", "warehouse_id", "remark", "status"}
 
     def __init__(self, db: DatabaseManager):
         self.db = db
@@ -154,21 +154,43 @@ class LocationDAO:
 
     def delete(self, location_id):
         with self.db.get_connection() as conn:
-            code_row = conn.execute("SELECT code FROM locations WHERE id=?", (location_id,)).fetchone()
-            if code_row:
-                has = conn.execute(
-                    "SELECT COUNT(*) FROM seal_numbers WHERE location_code=? AND status='in_stock'",
-                    (code_row["code"],),
-                ).fetchone()[0]
-                if has > 0:
-                    raise ValueError("该库位存在库存记录，无法删除")
-                conn.execute("DELETE FROM locations WHERE id=?", (location_id,))
+            code_row = conn.execute(
+                "SELECT code FROM locations WHERE id=?", (location_id,)
+            ).fetchone()
+            if not code_row:
+                return
+            code = code_row["code"]
+            has_seals = conn.execute(
+                "SELECT COUNT(*) FROM seal_numbers WHERE location_code=?",
+                (code,),
+            ).fetchone()[0]
+            has_pre = conn.execute(
+                "SELECT COUNT(*) FROM pre_inbound_orders WHERE location_code=?",
+                (code,),
+            ).fetchone()[0]
+            has_in = conn.execute(
+                "SELECT COUNT(*) FROM inbound_orders WHERE location_code=?",
+                (code,),
+            ).fetchone()[0]
+            if has_seals > 0 or has_pre > 0 or has_in > 0:
+                raise ValueError("该库位存在关联记录（铅封/入库），无法删除")
+            conn.execute("DELETE FROM locations WHERE id=?", (location_id,))
+
+    def toggle_active(self, location_id, active):
+        status = "active" if active else "inactive"
+        with self.db.get_connection() as conn:
+            conn.execute(
+                "UPDATE locations SET status=? WHERE id=?",
+                (status, location_id),
+            )
 
     def get(self, location_id):
         with self.db.get_connection() as conn:
-            return conn.execute("SELECT * FROM locations WHERE id=?", (location_id,)).fetchone()
+            return conn.execute(
+                "SELECT * FROM locations WHERE id=?", (location_id,)
+            ).fetchone()
 
-    def list(self, warehouse_id=None, code_prefix=None):
+    def list(self, warehouse_id=None, code_prefix=None, active_only=True):
         with self.db.get_connection() as conn:
             base_sql = (
                 "SELECT l.*, w.name AS warehouse_name, "
@@ -179,6 +201,8 @@ class LocationDAO:
             )
             conditions = []
             params = []
+            if active_only:
+                conditions.append("l.status='active'")
             if warehouse_id:
                 conditions.append("l.warehouse_id=?")
                 params.append(warehouse_id)

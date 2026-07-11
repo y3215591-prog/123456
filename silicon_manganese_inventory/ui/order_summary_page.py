@@ -34,7 +34,7 @@ class OrderSummaryPage(BasePage):
                 r["order_no"], r["customer_code"] or "", r["customer_name"] or "",
                 r["material_name"] or "", r["spec"] or "", r["order_quantity"],
                 r["shipped_quantity"], r["pending_quantity"],
-                f"{r['completion_rate'] * 100:.1f}%" if r.get("completion_rate") else "0%",
+                f"{r['completion_rate'] * 100:.1f}%" if r["completion_rate"] else "0%",
                 r["warning"] or "",
             ])
         self.populate_table(data)

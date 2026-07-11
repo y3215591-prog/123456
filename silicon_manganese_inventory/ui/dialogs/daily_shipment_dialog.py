@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import (
-    QVBoxLayout, QHBoxLayout, QFormLayout, QLineEdit,
+    QVBoxLayout, QHBoxLayout, QLineEdit,
     QPushButton, QDoubleSpinBox, QMessageBox, QTextEdit, QLabel,
     QFrame, QWidget, QScrollArea,
 )
@@ -64,7 +64,7 @@ class DailyShipmentDialog(BaseEasDialog):
 
         super().__init__(
             title="编辑发货明细" if edit_record else "新增发货明细",
-            width=660, height=620, parent=parent,
+            width=660, height=640, parent=parent,
         )
         self._setup_ui()
         if edit_record:
@@ -83,71 +83,59 @@ class DailyShipmentDialog(BaseEasDialog):
         card, cl = self.add_card(scroll_layout)
         self.add_section_title("基本信息", cl)
 
-        basic_form = QFormLayout()
-        basic_form.setSpacing(8)
-        basic_form.setLabelAlignment(Qt.AlignRight | Qt.AlignVCenter)
-
+        seq_widget = QWidget()
+        seq_inner = QHBoxLayout(seq_widget)
+        seq_inner.setContentsMargins(0, 0, 0, 0)
         self.seq_label = QLabel(str(self._next_seq))
         self.seq_label.setMinimumWidth(80)
-        seq_widget = QWidget()
-        seq_layout = QHBoxLayout(seq_widget)
-        seq_layout.setContentsMargins(0, 0, 0, 0)
-        seq_layout.addWidget(self.seq_label)
-        seq_layout.addStretch()
-        basic_form.addRow("序号:", seq_widget)
+        seq_inner.addWidget(self.seq_label)
+        seq_inner.addStretch()
+        self.add_form_row("序号:", seq_widget, cl)
 
         self.date_input = QLineEdit(datetime.now().strftime("%Y-%m-%d"))
         self.style_input(self.date_input)
-        basic_form.addRow("发货日期:", self.date_input)
+        self.add_form_row("发货日期:", self.date_input, cl)
 
         self.order_input = QLineEdit()
         self.order_input.setPlaceholderText("输入后自动匹配客户")
         self.style_input(self.order_input)
         self.order_input.textChanged.connect(self._on_order_changed)
-        basic_form.addRow("销售订单号:", self.order_input)
+        self.add_form_row("销售订单号:", self.order_input, cl)
 
         self.cust_name_label = QLabel("-")
-        self.cust_name_label.setStyleSheet("color: #374151; font-size: 13px; padding: 6px 10px; border: none; background: transparent;")
-        basic_form.addRow("客户名称:", self.cust_name_label)
+        self.cust_name_label.setStyleSheet("color: #374151; font-size: 13px; padding: 4px 0; border: none; background: transparent;")
+        self.add_form_row("客户名称:", self.cust_name_label, cl)
 
         self.cust_code_label = QLabel("-")
-        self.cust_code_label.setStyleSheet("color: #6B7280; font-size: 12px; padding: 6px 10px; border: none; background: transparent;")
-        basic_form.addRow("客户代码:", self.cust_code_label)
+        self.cust_code_label.setStyleSheet("color: #6B7280; font-size: 12px; padding: 4px 0; border: none; background: transparent;")
+        self.add_form_row("客户代码:", self.cust_code_label, cl)
 
         self.plate_input = QLineEdit()
         self.style_input(self.plate_input)
-        basic_form.addRow("车牌号:", self.plate_input)
-
-        cl.addLayout(basic_form)
+        self.add_form_row("车牌号:", self.plate_input, cl)
 
         card2, cl2 = self.add_card(scroll_layout)
         self.add_section_title("重量信息", cl2)
-
-        weight_form = QFormLayout()
-        weight_form.setSpacing(8)
-        weight_form.setLabelAlignment(Qt.AlignRight | Qt.AlignVCenter)
 
         self.gross_input = QDoubleSpinBox()
         self.gross_input.setRange(0, 99999)
         self.gross_input.setDecimals(2)
         self.style_spin(self.gross_input)
         self.gross_input.valueChanged.connect(self._auto_calc_net)
-        weight_form.addRow("毛重:", self.gross_input)
+        self.add_form_row("毛重:", self.gross_input, cl2)
 
         self.tare_input = QDoubleSpinBox()
         self.tare_input.setRange(0, 99999)
         self.tare_input.setDecimals(2)
         self.style_spin(self.tare_input)
         self.tare_input.valueChanged.connect(self._auto_calc_net)
-        weight_form.addRow("皮重:", self.tare_input)
+        self.add_form_row("皮重:", self.tare_input, cl2)
 
         self.net_input = QDoubleSpinBox()
         self.net_input.setRange(0, 99999)
         self.net_input.setDecimals(2)
         self.style_spin(self.net_input)
-        weight_form.addRow("净重:", self.net_input)
-
-        cl2.addLayout(weight_form)
+        self.add_form_row("净重:", self.net_input, cl2)
 
         card3, cl3 = self.add_card(scroll_layout)
         self.add_section_title("批次明细（支持多批次）", cl3)
@@ -178,23 +166,17 @@ class DailyShipmentDialog(BaseEasDialog):
         card4, cl4 = self.add_card(scroll_layout)
         self.add_section_title("其他信息（选填）", cl4)
 
-        extra_form = QFormLayout()
-        extra_form.setSpacing(8)
-        extra_form.setLabelAlignment(Qt.AlignRight | Qt.AlignVCenter)
-
         self.received_input = QDoubleSpinBox()
         self.received_input.setRange(0, 99999)
         self.received_input.setDecimals(2)
         self.style_spin(self.received_input)
-        extra_form.addRow("客户收货净重:", self.received_input)
+        self.add_form_row("客户收货净重:", self.received_input, cl4)
 
         self.remark_input = QTextEdit()
         self.remark_input.setMaximumHeight(60)
         self.remark_input.setPlaceholderText("选填")
         self.style_textarea(self.remark_input)
-        extra_form.addRow("备注:", self.remark_input)
-
-        cl4.addLayout(extra_form)
+        self.add_form_row("备注:", self.remark_input, cl4)
 
         scroll_layout.addStretch()
         scroll.setWidget(scroll_widget)
@@ -257,22 +239,25 @@ class DailyShipmentDialog(BaseEasDialog):
 
     def _load_record(self):
         r = self.edit_record
-        self.seq_label.setText(str(r.get("seq_no") or ""))
-        self.date_input.setText(r.get("shipment_date", ""))
-        self.plate_input.setText(r.get("plate_no", ""))
-        self.order_input.setText(r.get("sales_order_no", ""))
+        self.seq_label.setText(str(r["seq_no"] or ""))
+        self.date_input.setText(r["shipment_date"] or "")
+        self.plate_input.setText(r["plate_no"] or "")
+        self.order_input.setText(r["sales_order_no"] or "")
         self._on_order_changed()
-        self.gross_input.setValue(r.get("gross_weight") or 0)
-        self.tare_input.setValue(r.get("tare_weight") or 0)
-        self.net_input.setValue(r.get("net_weight") or 0)
-        self.received_input.setValue(r.get("customer_received_weight") or 0)
-        self.remark_input.setText(r.get("remark", ""))
+        self.gross_input.setValue(r["gross_weight"] or 0)
+        self.tare_input.setValue(r["tare_weight"] or 0)
+        self.net_input.setValue(r["net_weight"] or 0)
+        self.received_input.setValue(r["customer_received_weight"] or 0)
+        self.remark_input.setText(r["remark"] or "")
 
-        batch_no_str = r.get("batch_no", "") or ""
+        batch_no_str = r["batch_no"] or ""
+
+    def _save(self):
+        ...
         if batch_no_str:
             batches = [b.strip() for b in batch_no_str.split(",") if b.strip()]
             self._batch_widgets[0].batch_input.setText(batches[0] if batches else "")
-            qty = r.get("load_quantity") or 0
+            qty = r["load_quantity"] or 0
             self._batch_widgets[0].qty_input.setValue(float(qty) if len(batches) <= 1 else 0)
             for i, b in enumerate(batches[1:], 1):
                 self._add_batch_row()

@@ -44,14 +44,14 @@ class DailyShipmentPage(BasePage):
         data = []
         for r in rows:
             data.append([
-                r.get("id", ""), r.get("seq_no", ""), r.get("shipment_date", ""),
-                r.get("plate_no", ""), r.get("customer_code", ""),
-                r.get("customer_name", ""), r.get("sales_order_no", ""),
-                r.get("material_name", ""), r.get("spec", ""),
-                r.get("batch_no", ""), r.get("load_quantity", ""),
-                r.get("gross_weight", ""), r.get("tare_weight", ""),
-                r.get("net_weight", ""), r.get("customer_received_weight", ""),
-                r.get("seal_codes", ""), r.get("remark", ""),
+                r["id"] or "", r["seq_no"] or "", r["shipment_date"] or "",
+                r["plate_no"] or "", r["customer_code"] or "",
+                r["customer_name"] or "", r["sales_order_no"] or "",
+                r["material_name"] or "", r["spec"] or "",
+                r["batch_no"] or "", r["load_quantity"] or "",
+                r["gross_weight"] or "", r["tare_weight"] or "",
+                r["net_weight"] or "", r["customer_received_weight"] or "",
+                r["seal_codes"] or "", r["remark"] or "",
             ])
         self.populate_table(data)
 

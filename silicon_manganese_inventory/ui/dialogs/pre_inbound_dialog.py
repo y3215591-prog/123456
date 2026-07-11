@@ -1,7 +1,6 @@
 from PySide6.QtWidgets import (
-    QHBoxLayout, QFormLayout, QLineEdit,
+    QHBoxLayout, QLineEdit,
     QComboBox, QSpinBox, QLabel, QMessageBox, QTextEdit,
-    QWidget, QVBoxLayout,
 )
 from PySide6.QtCore import Qt
 from datetime import datetime
@@ -17,7 +16,7 @@ class PreInboundDialog(BaseEasDialog):
         self.edit_record = edit_record
         super().__init__(
             title="编辑预入库" if edit_record else "新增预入库",
-            width=620, height=560, parent=parent,
+            width=640, height=620, parent=parent,
         )
         self._setup_ui()
         if edit_record:
@@ -28,18 +27,14 @@ class PreInboundDialog(BaseEasDialog):
         card, cl = self.add_card()
         self.add_section_title("基本信息")
 
-        form = QFormLayout()
-        form.setSpacing(10)
-        form.setLabelAlignment(Qt.AlignRight | Qt.AlignVCenter)
-
         self.date_input = QLineEdit(datetime.now().strftime("%Y-%m-%d"))
         self.style_input(self.date_input)
-        form.addRow("日期:", self.date_input)
+        self.add_form_row("日期:", self.date_input, cl)
 
         self.batch_input = QLineEdit()
         self.batch_input.setPlaceholderText("如 1226062111")
         self.style_input(self.batch_input)
-        form.addRow("批次号 *:", self.batch_input)
+        self.add_form_row("批次号 *:", self.batch_input, cl)
 
         self.spec_combo = QComboBox()
         self.spec_combo.setEditable(True)
@@ -47,68 +42,55 @@ class PreInboundDialog(BaseEasDialog):
         spec_dao = SpecDAO(self.db)
         for s in spec_dao.list():
             self.spec_combo.addItem(s["name"], s["id"])
-        form.addRow("品名规格:", self.spec_combo)
+        self.add_form_row("品名规格:", self.spec_combo, cl)
 
         self.quantity_input = QSpinBox()
         self.quantity_input.setRange(1, 99999)
         self.quantity_input.setValue(1)
         self.style_spin(self.quantity_input)
-        form.addRow("数量(吨) *:", self.quantity_input)
+        self.add_form_row("数量(吨) *:", self.quantity_input, cl)
 
         self.location_combo = QComboBox()
         self.location_combo.setEditable(True)
         self.style_combo(self.location_combo)
         loc_dao = LocationDAO(self.db)
-        for l in loc_dao.list(code_prefix="Z"):
-            self.location_combo.addItem(f"{l['code']} ({l['name']})", l["code"])
+        for loc in loc_dao.list(code_prefix="Z"):
+            self.location_combo.addItem(f"{loc['code']} ({loc['name']})", loc["code"])
         z01_idx = self.location_combo.findData("Z01")
         if z01_idx >= 0:
             self.location_combo.setCurrentIndex(z01_idx)
-        form.addRow("自然块库位:", self.location_combo)
-
-        cl.addLayout(form)
+        self.add_form_row("自然块库位:", self.location_combo, cl)
 
         card2, cl2 = self.add_card()
         self.add_section_title("铅封号分配", cl2)
 
-        seal_form = QFormLayout()
-        seal_form.setSpacing(10)
-        seal_form.setLabelAlignment(Qt.AlignRight | Qt.AlignVCenter)
-
         self.seal_batch_combo = QComboBox()
         self.style_combo(self.seal_batch_combo)
         seal_dao = SealDAO(self.db)
-        for b in seal_dao.list_batches():
-            available = b["total_count"] - (b["used_count"] or 0)
+        for batch in seal_dao.list_batches():
+            available = batch["total_count"] - (batch["used_count"] or 0)
             self.seal_batch_combo.addItem(
-                f"{b['start_code']}~{b['end_code']} (剩余{available})", b["id"])
-        seal_form.addRow("铅封号段:", self.seal_batch_combo)
+                f"{batch['start_code']}~{batch['end_code']} (剩余{available})", batch["id"])
+        self.add_form_row("铅封号段:", self.seal_batch_combo, cl2)
 
         self.preview_label = QLabel("")
         self.preview_label.setStyleSheet(
-            "color: #16A34A; font-weight: bold; font-size: 13px; padding: 4px 0; border: none; background: transparent;"
-        )
-        seal_form.addRow("分配预览:", self.preview_label)
-        cl2.addLayout(seal_form)
+            "color: #16A34A; font-weight: bold; font-size: 13px; padding: 4px 0; border: none; background: transparent;")
+        self.add_form_row("分配预览:", self.preview_label, cl2)
 
         card3, cl3 = self.add_card()
         self.add_section_title("其他信息（选填）", cl3)
 
-        extra_form = QFormLayout()
-        extra_form.setSpacing(10)
-        extra_form.setLabelAlignment(Qt.AlignRight | Qt.AlignVCenter)
-
         self.operator_input = QLineEdit()
         self.operator_input.setPlaceholderText("选填")
         self.style_input(self.operator_input)
-        extra_form.addRow("操作人:", self.operator_input)
+        self.add_form_row("操作人:", self.operator_input, cl3)
 
         self.remark_input = QTextEdit()
         self.remark_input.setMaximumHeight(60)
         self.remark_input.setPlaceholderText("选填")
         self.style_textarea(self.remark_input)
-        extra_form.addRow("备注:", self.remark_input)
-        cl3.addLayout(extra_form)
+        self.add_form_row("备注:", self.remark_input, cl3)
 
         self.add_primary_button("保存", self._save)
         self.add_cancel_button()
@@ -127,17 +109,15 @@ class PreInboundDialog(BaseEasDialog):
             seals = seal_dao.get_available_seals(batch_id, limit=qty)
             if seals:
                 self.preview_label.setStyleSheet(
-                    "color: #16A34A; font-weight: bold; font-size: 13px; padding: 4px 0; border: none; background: transparent;"
-                )
+                    "color: #16A34A; font-weight: bold; font-size: 13px; padding: 4px 0; border: none; background: transparent;")
                 self.preview_label.setText(
-                    f"{qty} 吨，将分配: {seals[0]['seal_code']} ~ {seals[-1]['seal_code']}")
+                    f"{qty} 吨，分配: {seals[0]['seal_code']} ~ {seals[-1]['seal_code']}")
             else:
                 self.preview_label.setText(f"{qty} 吨，可分配")
         else:
             self.preview_label.setStyleSheet(
-                "color: #DC2626; font-weight: bold; font-size: 13px; padding: 4px 0; border: none; background: transparent;"
-            )
-            self.preview_label.setText(f"号段不足！需要 {qty} 个，仅剩 {available} 个")
+                "color: #DC2626; font-weight: bold; font-size: 13px; padding: 4px 0; border: none; background: transparent;")
+            self.preview_label.setText(f"号段不足，需要 {qty} 个，仅剩 {available} 个")
 
     def _load_record(self):
         r = self.edit_record
@@ -178,7 +158,6 @@ class PreInboundDialog(BaseEasDialog):
         else:
             location = self.location_combo.currentText().strip()
         if location:
-            from silicon_manganese_inventory.dao.base_dao import LocationDAO
             loc_dao = LocationDAO(self.db)
             location = loc_dao.get_or_create(location)
         operator = self.operator_input.text()

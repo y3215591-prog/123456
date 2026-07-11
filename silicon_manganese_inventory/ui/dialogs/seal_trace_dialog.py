@@ -1,11 +1,11 @@
-from PySide6.QtWidgets import QVBoxLayout, QFormLayout, QLineEdit, QPushButton, QLabel, QMessageBox
+from PySide6.QtWidgets import QLineEdit, QPushButton, QLabel, QMessageBox
 from silicon_manganese_inventory.dao.seal_dao import SealDAO
 from silicon_manganese_inventory.ui.dialogs.base_eas_dialog import BaseEasDialog
 
 
 class SealTraceDialog(BaseEasDialog):
     def __init__(self, db, parent=None):
-        super().__init__(title="铅封号追溯查询", width=560, height=520, parent=parent)
+        super().__init__(title="铅封号追溯查询", width=580, height=660, parent=parent)
         self.db = db
         self.seal_dao = SealDAO(db)
         self._setup_ui()
@@ -27,7 +27,6 @@ class SealTraceDialog(BaseEasDialog):
         scl.addWidget(search_btn)
 
         result_card, rcl = self.add_card()
-        self.result_form = QFormLayout()
         self._labels = {}
         for key, label in [
             ("seal_code", "铅封号"), ("batch_name", "号段批次"),
@@ -39,12 +38,12 @@ class SealTraceDialog(BaseEasDialog):
         ]:
             lbl = QLabel("")
             lbl.setStyleSheet("font-size: 13px; color: #374151; border: none; background: transparent;")
-            self.result_form.addRow(f"{label}:", lbl)
+            self.add_form_row(f"{label}:", lbl, rcl)
             self._labels[key] = lbl
-        rcl.addLayout(self.result_form)
 
         self.flow_label = QLabel("")
-        self.flow_label.setStyleSheet("font-size: 14px; color: #2B579A; font-weight: bold; padding: 4px 0; border: none; background: transparent;")
+        self.flow_label.setStyleSheet(
+            "font-size: 14px; color: #2B579A; font-weight: bold; padding: 4px 0; border: none; background: transparent;")
         rcl.addWidget(self.flow_label)
 
         self.add_close_button()
@@ -63,14 +62,14 @@ class SealTraceDialog(BaseEasDialog):
 
         status_map = {"unused": "未使用", "pre_allocated": "已预分配",
                       "in_stock": "已入库（在库）", "shipped": "已出库"}
-        status = row.get("status", "")
+        status = row["status"] or ""
         flow_parts = []
-        if row.get("pre_inbound_date"):
+        if row["pre_inbound_date"]:
             flow_parts.append(f"预入库 ({row['pre_inbound_date']})")
-        if row.get("inbound_date"):
+        if row["inbound_date"]:
             flow_parts.append(f"入库确认 ({row['inbound_date']})")
-        if row.get("outbound_date"):
-            flow_parts.append(f"出库发货 ({row['outbound_date']}) -> {row.get('customer_name', '')}")
+        if row["outbound_date"]:
+            flow_parts.append(f"出库发货 ({row['outbound_date']}) -> {row['customer_name'] or ''}")
         if flow_parts:
             self.flow_label.setText(f"生命周期: {' → '.join(flow_parts)}")
         else:

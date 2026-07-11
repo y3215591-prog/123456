@@ -132,15 +132,15 @@ class OutboundDialog(BaseEasDialog):
         order_dao = SalesOrderDAO(self.db)
         order = order_dao.get_by_order_no(text.strip())
         if order:
-            if order.get("customer_name"):
+            if order["customer_name"]:
                 idx = self.customer_combo.findText(order["customer_name"])
                 if idx >= 0:
                     self.customer_combo.setCurrentIndex(idx)
-            if order.get("material_desc"):
+            if order["material_desc"]:
                 self.spec_combo.setCurrentText(order["material_desc"])
-            if order.get("contract_no") and not self.contract_input.text():
+            if order["contract_no"] and not self.contract_input.text():
                 self.contract_input.setText(order["contract_no"])
-            ordered = order.get("quantity") or 0
+            ordered = (order["quantity"] or 0)
             shipped = self._get_order_shipped(text.strip())
             remaining = ordered - shipped
             status_text = "已完成" if remaining <= 0 else f"待发 {remaining} 吨"
@@ -164,7 +164,7 @@ class OutboundDialog(BaseEasDialog):
         order = order_dao.get_by_order_no(order_no)
         if not order:
             return None
-        ordered = order.get("quantity") or 0
+        ordered = (order["quantity"] or 0)
         shipped = self._get_order_shipped(order_no)
         return ordered - shipped
 

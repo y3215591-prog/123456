@@ -199,7 +199,7 @@ class TestLocationDAO:
         seal_dao.update_seal_status([seals[0]["id"]], "in_stock",
                                     location_code="B01")
         loc = dao.get_by_code("B01")
-        with pytest.raises(ValueError, match="库存"):
+        with pytest.raises(ValueError, match="关联记录"):
             dao.delete(loc["id"])
 
 

@@ -56,7 +56,7 @@ class CustomerPage(BasePage):
             rows = self.cust_dao.list(archived_only=self._archived)
         data = []
         for r in rows:
-            archived_mark = " [已归档]" if r.get("is_archived") else ""
+            archived_mark = " [已归档]" if r["is_archived"] else ""
             data.append([
                 r["id"], r["code"] or "", r["name"] + archived_mark,
                 r["contact_person"] or "", r["contact_phone"] or "",
@@ -117,7 +117,7 @@ class CustomerPage(BasePage):
         if self.type_combo.currentText() == "客户":
             act_edit = menu.addAction("编辑")
             record = self.cust_dao.get(record_id)
-            if record and not record.get("is_archived"):
+            if record and not record["is_archived"]:
                 act_archive = menu.addAction("归档")
             else:
                 act_archive = menu.addAction("取消归档")
@@ -175,7 +175,7 @@ class CustomerPage(BasePage):
 
     def _toggle_record_archive(self, record_id):
         r = self.cust_dao.get(record_id)
-        if r.get("is_archived"):
+        if r["is_archived"]:
             self.cust_dao.unarchive(record_id)
         else:
             self.cust_dao.archive(record_id)

@@ -55,9 +55,9 @@ class InventoryPage(BasePage):
         data = []
         for r_idx, r in enumerate(rows):
             location_code = r["location_code"] or ""
-            seal_list = r.get("seal_list", "") or ""
-            seal_min = r.get("seal_min", "")
-            seal_max = r.get("seal_max", "")
+            seal_list = r["seal_list"] or ""
+            seal_min = r["seal_min"] or ""
+            seal_max = r["seal_max"] or ""
             balance = r["balance"]
             if seal_list:
                 self._seal_data[r_idx] = seal_list

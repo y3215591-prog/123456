@@ -53,12 +53,12 @@ class OutboundDetailDialog(BaseEasDialog):
         self._title_label.setText(f"出库详情 - {order['order_no']}")
         info_items = [
             ("出库单号", order["order_no"]), ("日期", order["date"]),
-            ("客户", order.get("customer_name", "")), ("品名规格", order.get("spec_name", "")),
-            ("数量(吨)", str(order["quantity"])), ("销售订单号", order.get("sales_order_no", "")),
-            ("合同号", order.get("contract_no", "")), ("车牌号", order.get("plate_no", "")),
-            ("批次号", order.get("batch_nos", "")),
+            ("客户", order["customer_name"] or ""), ("品名规格", order["spec_name"] or ""),
+            ("数量(吨)", str(order["quantity"])), ("销售订单号", order["sales_order_no"] or ""),
+            ("合同号", order["contract_no"] or ""), ("车牌号", order["plate_no"] or ""),
+            ("批次号", order["batch_nos"] or ""),
             ("铅封号范围", f"{order['seal_start']}~{order['seal_end']}" if order["seal_start"] else ""),
-            ("操作人", order.get("operator", "")), ("备注", order.get("remark", "")),
+            ("操作人", order["operator"] or ""), ("备注", order["remark"] or ""),
         ]
         for label, value in info_items:
             row_widget = QWidget()

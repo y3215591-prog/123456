@@ -116,12 +116,12 @@ class SealManagePage(BasePage):
         data = []
         for s in seals:
             data.append([
-                s["seal_code"], s.get("batch_code", ""),
+                s["seal_code"], s["batch_code"] or "",
                 status_map.get(s["status"], s["status"]),
-                s.get("pre_inbound_order", "") or "",
-                s.get("inbound_order", "") or "",
-                s.get("outbound_order", "") or "",
-                s.get("created_at", "") or "",
+                s["pre_inbound_order"] or "",
+                s["inbound_order"] or "",
+                s["outbound_order"] or "",
+                s["created_at"] or "",
             ])
         self.populate_table(data)
 
