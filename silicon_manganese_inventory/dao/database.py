@@ -76,6 +76,20 @@ class DatabaseManager:
                     (element, min_val, max_val),
                 )
 
+    def reset_business_data(self):
+        with self.get_connection() as conn:
+            conn.execute("DELETE FROM daily_shipments")
+            conn.execute("DELETE FROM outbound_orders")
+            conn.execute("DELETE FROM inbound_orders")
+            conn.execute("DELETE FROM pre_inbound_orders")
+            conn.execute("DELETE FROM lab_results")
+            conn.execute("DELETE FROM seal_numbers")
+            conn.execute("DELETE FROM seal_batches")
+            conn.execute("DELETE FROM sales_orders")
+            conn.execute("DELETE FROM customers")
+            conn.execute("DELETE FROM suppliers")
+            conn.execute("DELETE FROM operation_logs")
+
 
 SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS seal_batches (

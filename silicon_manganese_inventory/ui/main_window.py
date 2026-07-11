@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QStackedWidget,
-    QStatusBar, QLabel, QComboBox,
+    QStatusBar, QLabel, QComboBox, QPushButton, QMessageBox,
 )
 from datetime import datetime
 from silicon_manganese_inventory.services.report_service import ReportService
@@ -83,6 +83,17 @@ class MainWindow(QMainWindow):
             self.theme_combo.setCurrentIndex(idx)
         self.theme_combo.currentIndexChanged.connect(self._on_theme_changed)
         top_layout.addStretch()
+
+        reset_btn = QPushButton("数据重置")
+        reset_btn.setFixedHeight(28)
+        reset_btn.setStyleSheet(
+            "QPushButton { background: #DC2626; color: white; border: none; "
+            "padding: 4px 12px; border-radius: 3px; font-size: 12px; } "
+            "QPushButton:hover { background: #B91C1C; }")
+        reset_btn.clicked.connect(self._reset_data)
+        top_layout.addWidget(reset_btn)
+        top_layout.addSpacing(8)
+
         top_layout.addWidget(theme_lbl)
         top_layout.addWidget(self.theme_combo)
         layout.addWidget(self.top_bar)
@@ -156,6 +167,29 @@ class MainWindow(QMainWindow):
         self.status_bar.showMessage(
             f"  当前日期: {now}  |  库存总铅封个数: {total}  |  已用铅封号: {used}"
         )
+
+    def _reset_data(self):
+        reply = QMessageBox.warning(
+            self, "数据重置",
+            "确定要清空所有业务数据吗？\n\n"
+            "将删除：铅封号、预入库、入库、出库、发货记录、\n"
+            "化验结果、销售订单、客户、供应商、操作日志\n\n"
+            "保留：品名规格、检验标准、仓库、库位\n\n"
+            "此操作不可恢复！",
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if reply != QMessageBox.Yes:
+            return
+        try:
+            self.db.reset_business_data()
+            QMessageBox.information(self, "完成", "所有业务数据已清空，基础配置保留。")
+            self._refresh_status_bar()
+            for page in self.pages.values():
+                try:
+                    page.refresh()
+                except Exception:
+                    pass
+        except Exception as e:
+            QMessageBox.critical(self, "错误", f"数据重置失败: {e}")
 
     def _connect_signals(self):
         self.navbar.nav_changed.connect(self._on_nav_changed)
