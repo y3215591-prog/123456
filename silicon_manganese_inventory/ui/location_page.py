@@ -100,8 +100,11 @@ class LocationPage(BasePage):
                 self.style_textarea(self.remark_input)
                 self.add_form_row("备注", self.remark_input, cl)
 
-                self.add_primary_button("保存", lambda dlg=self: dlg.accept())
+                self.add_primary_button("保存", self._on_save)
                 self.add_cancel_button()
+
+            def _on_save(self):
+                self.accept()
 
             def get_values(self):
                 return {
@@ -111,7 +114,7 @@ class LocationPage(BasePage):
                 }
 
         dlg = AddLocationDialog(self)
-        if dlg.exec() == dlg.Accepted:
+        if dlg.exec():
             vals = dlg.get_values()
             if not vals["code"]:
                 self.show_error("库位编码不能为空")
@@ -119,10 +122,9 @@ class LocationPage(BasePage):
             try:
                 self.loc_dao.create(code=vals["code"], name=vals["name"], remark=vals["remark"])
                 self.show_info(f"库位 {vals['code']} 已新增")
+                self.refresh()
             except Exception as e:
                 self.show_error(str(e))
-                return
-            self.refresh()
 
     def _edit_selected(self):
         loc = self._get_selected_loc()
@@ -142,6 +144,7 @@ class LocationPage(BasePage):
                 super().__init__(title="编辑库位", width=400, height=280, parent=parent)
                 card, cl = self.add_card()
                 self.code_input = QLineEdit(edit_data["code"])
+                self.code_input.setReadOnly(True)
                 self.style_input(self.code_input)
                 self.add_form_row("编码", self.code_input, cl)
 
@@ -155,8 +158,11 @@ class LocationPage(BasePage):
                 self.style_textarea(self.remark_input)
                 self.add_form_row("备注", self.remark_input, cl)
 
-                self.add_primary_button("保存", lambda dlg=self: dlg.accept())
+                self.add_primary_button("保存", self._on_save)
                 self.add_cancel_button()
+
+            def _on_save(self):
+                self.accept()
 
             def get_values(self):
                 return {
@@ -165,15 +171,14 @@ class LocationPage(BasePage):
                 }
 
         dlg = EditLocationDialog(dict(loc), self)
-        if dlg.exec() == dlg.Accepted:
+        if dlg.exec():
             vals = dlg.get_values()
             try:
                 self.loc_dao.update(loc_id, name=vals["name"], remark=vals["remark"])
                 self.show_info("库位已更新")
+                self.refresh()
             except Exception as e:
                 self.show_error(str(e))
-                return
-            self.refresh()
 
     def _seed_default_locations(self):
         try:
