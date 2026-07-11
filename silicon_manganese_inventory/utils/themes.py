@@ -5,13 +5,16 @@ THEMES = {
         "accent_light": "#E8F0FE",
         "bg": "#F5F7FA",
         "card": "#FFFFFF",
-        "sidebar": "#263959",
-        "sidebar_text": "#C8D6E5",
-        "sidebar_active": "#2B579A",
+        "topbar": "#2B579A",
+        "topbar_text": "#FFFFFF",
+        "sidebar": "#F0F2F5",
+        "sidebar_text": "#4B5563",
+        "sidebar_active_bg": "#E0E7F1",
+        "sidebar_active_border": "#2B579A",
         "text_primary": "#1D2939",
         "text_secondary": "#6B7280",
-        "table_header": "#2B579A",
-        "table_header_text": "#FFFFFF",
+        "table_header": "#EDF1F7",
+        "table_header_text": "#374151",
         "table_alt": "#F8FAFC",
         "success": "#16A34A",
         "warning": "#D97706",
@@ -24,13 +27,16 @@ THEMES = {
         "accent_light": "#DBEAFE",
         "bg": "#F4F7FB",
         "card": "#FFFFFF",
-        "sidebar": "#1E3A5F",
-        "sidebar_text": "#BFDBFE",
-        "sidebar_active": "#1E40AF",
+        "topbar": "#1E40AF",
+        "topbar_text": "#FFFFFF",
+        "sidebar": "#F0F2F5",
+        "sidebar_text": "#4B5563",
+        "sidebar_active_bg": "#DBEAFE",
+        "sidebar_active_border": "#1E40AF",
         "text_primary": "#1E293B",
         "text_secondary": "#64748B",
-        "table_header": "#1E40AF",
-        "table_header_text": "#FFFFFF",
+        "table_header": "#EDF1F7",
+        "table_header_text": "#374151",
         "table_alt": "#F8FAFC",
         "success": "#15803D",
         "warning": "#B45309",
@@ -43,13 +49,16 @@ THEMES = {
         "accent_light": "#CCFBF1",
         "bg": "#F3FAF7",
         "card": "#FFFFFF",
-        "sidebar": "#1A3B34",
-        "sidebar_text": "#CCFBF1",
-        "sidebar_active": "#0D9488",
+        "topbar": "#0D9488",
+        "topbar_text": "#FFFFFF",
+        "sidebar": "#F0F2F5",
+        "sidebar_text": "#4B5563",
+        "sidebar_active_bg": "#CCFBF1",
+        "sidebar_active_border": "#0D9488",
         "text_primary": "#1D2D25",
         "text_secondary": "#697D74",
-        "table_header": "#0D9488",
-        "table_header_text": "#FFFFFF",
+        "table_header": "#EDF1F7",
+        "table_header_text": "#374151",
         "table_alt": "#F8FAFC",
         "success": "#15803D",
         "warning": "#D97706",
@@ -62,13 +71,16 @@ THEMES = {
         "accent_light": "#FFF7ED",
         "bg": "#FEF9F5",
         "card": "#FFFFFF",
-        "sidebar": "#3D2E1E",
-        "sidebar_text": "#FED7AA",
-        "sidebar_active": "#EA580C",
+        "topbar": "#EA580C",
+        "topbar_text": "#FFFFFF",
+        "sidebar": "#F0F2F5",
+        "sidebar_text": "#4B5563",
+        "sidebar_active_bg": "#FFF7ED",
+        "sidebar_active_border": "#EA580C",
         "text_primary": "#2D241A",
         "text_secondary": "#8B7D74",
-        "table_header": "#EA580C",
-        "table_header_text": "#FFFFFF",
+        "table_header": "#EDF1F7",
+        "table_header_text": "#374151",
         "table_alt": "#FEFCFB",
         "success": "#16A34A",
         "warning": "#D97706",
@@ -81,13 +93,16 @@ THEMES = {
         "accent_light": "#F3E8FF",
         "bg": "#F8F5FE",
         "card": "#FFFFFF",
-        "sidebar": "#2D1B4E",
-        "sidebar_text": "#DDD6FE",
-        "sidebar_active": "#7C3AED",
+        "topbar": "#7C3AED",
+        "topbar_text": "#FFFFFF",
+        "sidebar": "#F0F2F5",
+        "sidebar_text": "#4B5563",
+        "sidebar_active_bg": "#F3E8FF",
+        "sidebar_active_border": "#7C3AED",
         "text_primary": "#2D1D3D",
         "text_secondary": "#8B7D9B",
-        "table_header": "#7C3AED",
-        "table_header_text": "#FFFFFF",
+        "table_header": "#EDF1F7",
+        "table_header_text": "#374151",
         "table_alt": "#F8FAFC",
         "success": "#16A34A",
         "warning": "#D97706",
@@ -100,13 +115,16 @@ THEMES = {
         "accent_light": "#FCE7F3",
         "bg": "#FDF5F8",
         "card": "#FFFFFF",
-        "sidebar": "#3D1D2D",
-        "sidebar_text": "#FBCFE8",
-        "sidebar_active": "#BE185D",
+        "topbar": "#BE185D",
+        "topbar_text": "#FFFFFF",
+        "sidebar": "#F0F2F5",
+        "sidebar_text": "#4B5563",
+        "sidebar_active_bg": "#FCE7F3",
+        "sidebar_active_border": "#BE185D",
         "text_primary": "#2D1D20",
         "text_secondary": "#9B7D80",
-        "table_header": "#BE185D",
-        "table_header_text": "#FFFFFF",
+        "table_header": "#EDF1F7",
+        "table_header_text": "#374151",
         "table_alt": "#FDFDFD",
         "success": "#16A34A",
         "warning": "#D97706",
@@ -119,13 +137,16 @@ THEMES = {
         "accent_light": "#FEF3E7",
         "bg": "#FBF7F4",
         "card": "#FFFFFF",
-        "sidebar": "#2D2018",
-        "sidebar_text": "#E7D7C8",
-        "sidebar_active": "#A67C52",
+        "topbar": "#A67C52",
+        "topbar_text": "#FFFFFF",
+        "sidebar": "#F0F2F5",
+        "sidebar_text": "#4B5563",
+        "sidebar_active_bg": "#FEF3E7",
+        "sidebar_active_border": "#A67C52",
         "text_primary": "#2D2018",
         "text_secondary": "#8B7060",
-        "table_header": "#A67C52",
-        "table_header_text": "#FFFFFF",
+        "table_header": "#EDF1F7",
+        "table_header_text": "#374151",
         "table_alt": "#F8FAFC",
         "success": "#16A34A",
         "warning": "#D97706",
@@ -138,13 +159,16 @@ THEMES = {
         "accent_light": "#D1FAE5",
         "bg": "#F2FBF6",
         "card": "#FFFFFF",
-        "sidebar": "#1A3D2D",
-        "sidebar_text": "#A7F3D0",
-        "sidebar_active": "#059669",
+        "topbar": "#059669",
+        "topbar_text": "#FFFFFF",
+        "sidebar": "#F0F2F5",
+        "sidebar_text": "#4B5563",
+        "sidebar_active_bg": "#D1FAE5",
+        "sidebar_active_border": "#059669",
         "text_primary": "#1D2D25",
         "text_secondary": "#6B7D6F",
-        "table_header": "#059669",
-        "table_header_text": "#FFFFFF",
+        "table_header": "#EDF1F7",
+        "table_header_text": "#374151",
         "table_alt": "#F8FAFC",
         "success": "#059669",
         "warning": "#D97706",
@@ -157,12 +181,15 @@ THEMES = {
         "accent_light": "#312E81",
         "bg": "#1A1B26",
         "card": "#24253A",
-        "sidebar": "#0F1021",
+        "topbar": "#4338CA",
+        "topbar_text": "#E4E4E7",
+        "sidebar": "#272838",
         "sidebar_text": "#9CA3AF",
-        "sidebar_active": "#6366F1",
+        "sidebar_active_bg": "#4338CA",
+        "sidebar_active_border": "#6366F1",
         "text_primary": "#E4E4E7",
         "text_secondary": "#A1A1AA",
-        "table_header": "#4338CA",
+        "table_header": "#312E81",
         "table_header_text": "#E4E4E7",
         "table_alt": "#282940",
         "success": "#22C55E",
@@ -176,13 +203,16 @@ THEMES = {
         "accent_light": "#F1F5F9",
         "bg": "#FAFBFD",
         "card": "#FFFFFF",
-        "sidebar": "#334155",
-        "sidebar_text": "#CBD5E1",
-        "sidebar_active": "#64748B",
+        "topbar": "#334155",
+        "topbar_text": "#FFFFFF",
+        "sidebar": "#F1F5F9",
+        "sidebar_text": "#475569",
+        "sidebar_active_bg": "#E2E8F0",
+        "sidebar_active_border": "#64748B",
         "text_primary": "#1E293B",
         "text_secondary": "#94A3B8",
-        "table_header": "#64748B",
-        "table_header_text": "#FFFFFF",
+        "table_header": "#EDF1F7",
+        "table_header_text": "#374151",
         "table_alt": "#F8FAFC",
         "success": "#16A34A",
         "warning": "#D97706",
@@ -228,7 +258,7 @@ QHeaderView::section {{
     font-size: 12px;
     padding: 7px 8px;
     border: none;
-    border-right: 1px solid rgba(255,255,255,0.12);
+    border-right: 1px solid {border};
 }}
 
 QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox, QDateEdit {{
@@ -407,17 +437,35 @@ QFrame#btnBar {{
 }}
 """
 
-EAS_NAVBAR = """
-QFrame#navBar {{
-    background: {sidebar};
+EAS_TOPBAR = """
+QFrame#topBar {{
+    background: {topbar};
     border: none;
 }}
 
-QLabel#navTitle {{
-    color: #FFFFFF;
-    font-size: 15px;
+QLabel#topBarTitle {{
+    color: {topbar_text};
+    font-size: 16px;
     font-weight: bold;
-    padding: 16px 12px 8px;
+}}
+
+QLabel#topBarLabel {{
+    color: {topbar_text};
+    font-size: 12px;
+}}
+"""
+
+EAS_NAVBAR = """
+QFrame#navBar {{
+    background: {sidebar};
+    border-right: 1px solid {border};
+}}
+
+QLabel#navTitle {{
+    color: {text_primary};
+    font-size: 14px;
+    font-weight: bold;
+    padding: 12px 16px 4px;
 }}
 
 QPushButton#navBtn {{
@@ -432,15 +480,15 @@ QPushButton#navBtn {{
 }}
 
 QPushButton#navBtn:hover {{
-    background: rgba(255,255,255,0.08);
-    color: #FFFFFF;
+    background: {sidebar_active_bg};
+    color: {text_primary};
 }}
 
 QPushButton#navBtn[active="true"] {{
-    background: {sidebar_active};
-    color: #FFFFFF;
+    background: {sidebar_active_bg};
+    color: {accent};
     font-weight: bold;
-    border-left: 3px solid {accent};
+    border-left: 3px solid {sidebar_active_border};
     padding-left: 13px;
 }}
 """

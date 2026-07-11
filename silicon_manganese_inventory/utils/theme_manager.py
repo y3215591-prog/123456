@@ -1,12 +1,12 @@
 from PySide6.QtWidgets import QWidget
-from PySide6.QtCore import QSettings
-from silicon_manganese_inventory.utils.themes import THEMES, DEFAULT_THEME, EAS_BASE, EAS_CARD, EAS_NAVBAR, EAS_DIALOG
+from silicon_manganese_inventory.utils.themes import THEMES, DEFAULT_THEME, EAS_BASE, EAS_CARD, EAS_NAVBAR, EAS_DIALOG, EAS_TOPBAR
 
 
 class ThemeManager:
     _instance = None
 
     def __init__(self):
+        from PySide6.QtCore import QSettings
         self._settings = QSettings("SiliconMnInventory", "UI")
         self._current_key = self._settings.value("theme", DEFAULT_THEME)
         self._theme = THEMES.get(self._current_key, THEMES[DEFAULT_THEME])
@@ -41,6 +41,9 @@ class ThemeManager:
 
     def card_style(self):
         return EAS_CARD.format(**self._theme)
+
+    def topbar_style(self):
+        return EAS_TOPBAR.format(**self._theme)
 
     def navbar_style(self):
         return EAS_NAVBAR.format(**self._theme)

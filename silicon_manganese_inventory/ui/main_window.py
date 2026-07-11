@@ -23,17 +23,17 @@ from silicon_manganese_inventory.ui.basic_data_page import BasicDataPage
 
 class MainWindow(QMainWindow):
     NAV_ITEMS = [
-        ("预入库", 0),
-        ("入库确认", 1),
-        ("出库发货", 2),
-        ("成品库存", 3),
-        ("每日发货明细", 4),
-        ("订单装车汇总", 5),
-        ("Excel导入", 6),
-        ("铅封号管理", 7),
-        ("库位管理", 8),
-        ("客户/供应商", 9),
-        ("基础数据", 10),
+        (" 预入库", 0),
+        (" 入库确认", 1),
+        (" 出库发货", 2),
+        (" 成品库存", 3),
+        (" 每日发货明细", 4),
+        (" 订单装车汇总", 5),
+        (" Excel导入", 6),
+        (" 铅封号管理", 7),
+        (" 库位管理", 8),
+        (" 客户/供应商", 9),
+        (" 基础数据", 10),
     ]
 
     def __init__(self, db):
@@ -51,28 +51,30 @@ class MainWindow(QMainWindow):
     def _setup_ui(self):
         central = QWidget()
         self.setCentralWidget(central)
-        layout = QHBoxLayout(central)
+        layout = QVBoxLayout(central)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        self.navbar = NavBar(self.NAV_ITEMS)
-        self.navbar.setFixedWidth(180)
-        self.navbar.setObjectName("navBar")
-        layout.addWidget(self.navbar)
+        self.top_bar = QWidget()
+        self.top_bar.setObjectName("topBar")
+        self.top_bar.setFixedHeight(48)
+        top_layout = QHBoxLayout(self.top_bar)
+        top_layout.setContentsMargins(16, 0, 16, 0)
 
-        right_side = QVBoxLayout()
-        right_side.setContentsMargins(0, 0, 0, 0)
-        right_side.setSpacing(0)
+        title_label = QLabel("硅锰合金库存管理系统")
+        title_label.setObjectName("topBarTitle")
+        top_layout.addWidget(title_label)
 
-        top_bar = QWidget()
-        top_bar.setStyleSheet("background: #FFFFFF; border-bottom: 1px solid #E2E8F0;")
-        top_layout = QHBoxLayout(top_bar)
-        top_layout.setContentsMargins(16, 4, 16, 4)
-
-        theme_lbl = QLabel("主题:")
-        theme_lbl.setStyleSheet("font-size: 12px; color: #6B7280; border: none; background: transparent;")
+        theme_lbl = QLabel(" 主题:")
+        theme_lbl.setObjectName("topBarLabel")
         self.theme_combo = QComboBox()
-        self.theme_combo.setFixedWidth(100)
+        self.theme_combo.setFixedWidth(90)
+        self.theme_combo.setStyleSheet(
+            "QComboBox { border: 1px solid rgba(255,255,255,0.3); border-radius: 3px; "
+            "padding: 3px 8px; font-size: 12px; background: rgba(255,255,255,0.1); "
+            "color: white; } "
+            "QComboBox::drop-down { border: none; } "
+            "QComboBox QAbstractItemView { color: #333; background: white; }")
         for key, t in THEMES.items():
             self.theme_combo.addItem(t["name"], key)
         cur = self._tm.current_key
@@ -83,14 +85,23 @@ class MainWindow(QMainWindow):
         top_layout.addStretch()
         top_layout.addWidget(theme_lbl)
         top_layout.addWidget(self.theme_combo)
-        right_side.addWidget(top_bar)
+        layout.addWidget(self.top_bar)
+
+        body = QHBoxLayout()
+        body.setContentsMargins(0, 0, 0, 0)
+        body.setSpacing(0)
+
+        self.navbar = NavBar(self.NAV_ITEMS)
+        self.navbar.setFixedWidth(180)
+        self.navbar.setObjectName("navBar")
+        body.addWidget(self.navbar)
 
         self.stack = QStackedWidget()
         self.stack.setObjectName("contentArea")
         self.stack.setStyleSheet("background: #F5F7FA; border: none;")
-        right_side.addWidget(self.stack)
+        body.addWidget(self.stack)
 
-        layout.addLayout(right_side)
+        layout.addLayout(body)
 
         self.pages = {
             0: PreInboundPage(self.db),
@@ -115,7 +126,9 @@ class MainWindow(QMainWindow):
 
     def _apply_theme(self):
         t = self._tm.current
+        top_style = self._tm.topbar_style()
         nav_style = self._tm.navbar_style()
+        self.top_bar.setStyleSheet(top_style)
         self.navbar.setStyleSheet(nav_style)
 
     def _on_theme_changed(self):

@@ -18,12 +18,12 @@ class NavBar(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        title = QLabel("硅锰合金库存管理系统")
+        title = QLabel(" 功能导航")
         title.setObjectName("navTitle")
         title.setWordWrap(True)
         layout.addWidget(title)
 
-        spacer = QSpacerItem(20, 12, QSizePolicy.Minimum, QSizePolicy.Fixed)
+        spacer = QSpacerItem(20, 8, QSizePolicy.Minimum, QSizePolicy.Fixed)
         layout.addItem(spacer)
 
         for name, idx in self.items:
