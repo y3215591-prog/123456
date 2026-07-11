@@ -26,8 +26,11 @@ class LabService:
             s_r = self._judge_element("S", s_content)
             p_r = self._judge_element("P", p_content)
             all_results = [r for r in [mn_r, si_r, c_r, s_r, p_r] if r != "skipped"]
-            overall_result = "合格" if all(r == "合格" for r in all_results) else "不合格"
-        return self.dao.save_result(
+            if not all_results:
+                overall_result = "未检测"
+            else:
+                overall_result = "合格" if all(r == "合格" for r in all_results) else "不合格"
+        result_id = self.dao.save_result(
             pre_inbound_id,
             mn_content=mn_content, si_content=si_content,
             c_content=c_content, s_content=s_content, p_content=p_content,
@@ -37,6 +40,7 @@ class LabService:
             test_date=datetime.now().strftime("%Y-%m-%d"),
             remark=remark,
         )
+        return {"id": result_id, "overall_result": overall_result}
 
     def _judge_element(self, element, value):
         if value is None:

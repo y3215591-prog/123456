@@ -185,8 +185,11 @@ class LocationPage(BasePage):
             f"确定要{label}该库位吗？" + ("\n停用后将在列表中自动隐藏。" if not new_active else ""),
             QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
-            self.loc_dao.toggle_active(loc_id, new_active)
-            self.show_info(f"库位已{label}")
+            try:
+                self.loc_dao.toggle_active(loc_id, new_active)
+                self.show_info(f"库位已{label}")
+            except Exception as e:
+                self.show_error(str(e))
             self.refresh()
 
     def _delete_selected(self):
@@ -204,7 +207,7 @@ class LocationPage(BasePage):
             try:
                 self.loc_dao.delete(loc_id)
                 self.show_info(f"库位 {code} 已删除")
-            except ValueError as e:
+            except Exception as e:
                 self.show_error(str(e))
                 return
             self.refresh()

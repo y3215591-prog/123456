@@ -81,6 +81,12 @@ class SealManagePage(BasePage):
             self.refresh()
 
     def refresh(self):
+        try:
+            self._do_refresh()
+        except Exception as e:
+            self.show_error(f"加载铅封数据失败: {e}")
+
+    def _do_refresh(self):
         status = self.status_combo.currentData()
 
         batches = self.seal_dao.list_batches()

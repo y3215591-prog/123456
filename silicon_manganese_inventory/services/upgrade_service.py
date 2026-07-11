@@ -89,6 +89,16 @@ class UpgradeService:
                                 parts = parts[i + 1:]
                                 break
 
+                    # Zip Slip protection: block path traversal
+                    for p in parts:
+                        if p == ".." or p.startswith("../") or p.startswith("~"):
+                            log_lines.append(f"  安全阻止(路径穿越): {member}")
+                            has_error = True
+                            error_msg = f"非法路径: {member}"
+                            break
+                    if has_error:
+                        break
+
                     rel_path = "/".join(parts)
                     dest = app_root / rel_path
                     dest.parent.mkdir(parents=True, exist_ok=True)

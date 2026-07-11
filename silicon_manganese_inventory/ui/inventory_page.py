@@ -72,16 +72,19 @@ class InventoryPage(BasePage):
         rows = self.report_svc.get_inventory_report(location_code=location)
         total = sum(r["balance"] or 0 for r in rows)
         self.total_label.setText(f"库存总计: {total} 吨")
+        self._seal_lists = []
         data = []
         for r in rows:
             location_code = r["location_code"] or ""
             seal_min = r["seal_min"] or ""
             seal_max = r["seal_max"] or ""
             balance = r["balance"]
-            if r.get("seal_list"):
+            seal_list = r.get("seal_list") or ""
+            if seal_list:
                 display = f"{seal_min}~{seal_max} ({balance}个)"
             else:
                 display = ""
+            self._seal_lists.append(seal_list)
             data.append([
                 r["batch_no"], location_code, balance,
                 r["last_inbound_date"], self._format_lab_detail(r), display,
@@ -143,9 +146,8 @@ class InventoryPage(BasePage):
                 dlg = LocationDetailDialog(self.db, location_code, self)
                 dlg.exec()
         elif col == self.SEAL_COL:
-            if all_idx < len(self._all_rows):
-                r = self._all_rows[all_idx]
-                seal_list = r.get("seal_list") or ""
+            if hasattr(self, "_seal_lists") and all_idx < len(self._seal_lists):
+                seal_list = self._seal_lists[all_idx]
                 if seal_list:
                     dlg = SealListDialog(seal_list, self)
                     dlg.exec()

@@ -175,6 +175,7 @@ class PreInboundDialog(BaseEasDialog):
                     date=date, batch_no=batch_no, quantity=quantity,
                     spec_id=spec_id, location_code=location,
                     operator=operator, remark=remark,
+                    seal_batch_id=batch_id,
                 )
             else:
                 svc.create_pre_inbound(

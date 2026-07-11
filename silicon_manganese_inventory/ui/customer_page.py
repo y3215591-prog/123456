@@ -72,7 +72,7 @@ class CustomerPage(BasePage):
             return
         try:
             self.cust_dao.create(name=name.strip())
-        except ValueError as e:
+        except Exception as e:
             self.show_error(str(e))
             return
         self.refresh()
@@ -83,7 +83,7 @@ class CustomerPage(BasePage):
             return
         try:
             self.supplier_dao.create(name=name.strip())
-        except ValueError as e:
+        except Exception as e:
             self.show_error(str(e))
             return
         self.type_combo.setCurrentText("供应商")
@@ -142,24 +142,27 @@ class CustomerPage(BasePage):
             self._toggle_record_archive(record_id)
 
     def _edit_record(self, record_id):
-        if self.type_combo.currentText() == "客户":
-            r = self.cust_dao.get(record_id)
-            dao = self.cust_dao
-        else:
-            r = self.supplier_dao.get(record_id)
-            dao = self.supplier_dao
-        if not r:
-            return
+        try:
+            if self.type_combo.currentText() == "客户":
+                r = self.cust_dao.get(record_id)
+                dao = self.cust_dao
+            else:
+                r = self.supplier_dao.get(record_id)
+                dao = self.supplier_dao
+            if not r:
+                return
 
-        name, ok = QInputDialog.getText(self, "编辑名称", "名称:", text=r["name"])
-        if not ok or not name.strip():
-            return
-        contact = self._ask_optional("联系人", r["contact_person"] or "")
-        phone = self._ask_optional("电话", r["contact_phone"] or "")
-        addr = self._ask_optional("地址", r["address"] or "")
-        remark = self._ask_optional("备注", r["remark"] or "")
-        dao.update(record_id, name=name.strip(), contact_person=contact,
-                   contact_phone=phone, address=addr, remark=remark)
+            name, ok = QInputDialog.getText(self, "编辑名称", "名称:", text=r["name"])
+            if not ok or not name.strip():
+                return
+            contact = self._ask_optional("联系人", r["contact_person"] or "")
+            phone = self._ask_optional("电话", r["contact_phone"] or "")
+            addr = self._ask_optional("地址", r["address"] or "")
+            remark = self._ask_optional("备注", r["remark"] or "")
+            dao.update(record_id, name=name.strip(), contact_person=contact,
+                       contact_phone=phone, address=addr, remark=remark)
+        except Exception as e:
+            self.show_error(f"编辑失败: {e}")
         self.refresh()
 
     def _delete_record(self, record_id):

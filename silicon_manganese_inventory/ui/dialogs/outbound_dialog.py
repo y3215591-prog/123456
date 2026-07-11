@@ -284,8 +284,6 @@ class OutboundDialog(BaseEasDialog):
             return
         location = self.location_combo.currentData()
         if not location:
-            location = self.location_combo.currentText().strip()
-        if not location:
             QMessageBox.warning(self, "错误", "请选择出库库位")
             return
         loc_dao = LocationDAO(self.db)

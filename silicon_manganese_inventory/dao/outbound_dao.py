@@ -76,12 +76,16 @@ class OutboundDAO:
                 "SELECT quantity FROM outbound_orders WHERE id=?",
                 (outbound_id,)
             ).fetchone()
-            if order and order["quantity"]:
-                conn.execute(
-                    """UPDATE seal_numbers SET status='in_stock', outbound_id=NULL,
-                       updated_at=datetime('now','localtime')
-                       WHERE outbound_id=? AND status='shipped'
-                       ORDER BY seal_code LIMIT ?""",
-                    (outbound_id, order["quantity"]),
-                )
+            if order:
+                count = conn.execute(
+                    "SELECT COUNT(*) FROM seal_numbers WHERE outbound_id=? AND status='shipped'",
+                    (outbound_id,),
+                ).fetchone()[0]
+                if count > 0:
+                    conn.execute(
+                        """UPDATE seal_numbers SET status='in_stock', outbound_id=NULL,
+                           updated_at=datetime('now','localtime')
+                           WHERE outbound_id=? AND status='shipped'""",
+                        (outbound_id,),
+                    )
             conn.execute("DELETE FROM outbound_orders WHERE id=?", (outbound_id,))
