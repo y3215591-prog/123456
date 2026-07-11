@@ -12,7 +12,7 @@ class InventoryBalanceDialog(BaseEasDialog):
         self.db = db
         items = result["items"]
         super().__init__(
-            title=f"盘点数据 - 共 {len(items)} 行, 合计 {result['total_balance']} 吨",
+            title=f"库存结余 - 共 {len(items)} 行, 合计 {result['total_balance']} 吨",
             width=1000, height=600, parent=parent,
         )
         self._setup_ui(items)
@@ -20,7 +20,7 @@ class InventoryBalanceDialog(BaseEasDialog):
 
     def _setup_ui(self, items):
         summary = QLabel(
-            f"从Excel解析到 {self.result['count']} 条结余记录, "
+            f"从收发存汇总表解析到 {self.result['count']} 条库存结余记录, "
             f"总库存 {self.result['total_balance']} 吨")
         summary.setStyleSheet("color: #374151; font-size: 13px; padding: 4px 0; border: none; background: transparent;")
         self.body_layout.addWidget(summary)

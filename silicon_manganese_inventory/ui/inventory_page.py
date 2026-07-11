@@ -30,7 +30,7 @@ class InventoryPage(BasePage):
             self.location_combo.addItem(l["code"], l["code"])
         self.add_search_field("库位:", self.location_combo)
         self.add_search_button("搜索", self._do_search)
-        self.add_header_button("上传盘点数据", self._import_balance, "#8B5CF6")
+        self.add_header_button("上传库存结余", self._import_balance, "#8B5CF6")
         self.add_header_button("导出 Excel", self._export, "#2980b9")
 
         self.total_label = QLabel("库存总计: 0 吨")
