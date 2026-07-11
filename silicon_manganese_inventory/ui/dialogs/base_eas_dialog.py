@@ -57,6 +57,7 @@ class BaseEasDialog(QDialog):
             "QFrame#btnBar { background: #FAFBFC; border-top: 1px solid #E2E8F0; }")
         btn_layout = QHBoxLayout(self._btn_bar)
         btn_layout.setContentsMargins(16, 0, 16, 0)
+        btn_layout.addStretch()
         self.btn_layout = btn_layout
         self.main_layout.addWidget(self._btn_bar)
 

@@ -49,7 +49,7 @@ class SealImportDialog(BaseEasDialog):
         try:
             dao = SealDAO(self.db)
             dao.import_range(start_int, end_int, batch_code=batch_code)
-        except ValueError as e:
+        except Exception as e:
             QMessageBox.warning(self, "错误", str(e))
             return
         self.accept()

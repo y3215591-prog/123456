@@ -325,7 +325,7 @@ class OutboundDialog(BaseEasDialog):
                 contract_no=contract, plate_no=plate,
                 operator=operator, remark=remark,
             )
-        except ValueError as e:
+        except Exception as e:
             QMessageBox.warning(self, "错误", str(e))
             return
         self.accept()

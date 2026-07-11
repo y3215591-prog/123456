@@ -145,8 +145,9 @@ class LabResultDialog(BaseEasDialog):
                 self._inbound_confirmed = True
             elif overall == "不合格":
                 QMessageBox.warning(self, "化验不合格",
-                    "化验结果为不合格，无法完成入库确认。"
-                    "\n化验结果已保存，请联系管理员处理。")
+                    "化验结果已保存，但结果不合格，无法完成入库确认。"
+                    "\n请联系管理员处理。")
+                self.accept()
         except Exception as e:
             QMessageBox.warning(self, "错误", str(e))
             return

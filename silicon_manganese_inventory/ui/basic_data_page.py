@@ -45,25 +45,28 @@ class BasicDataPage(BasePage):
 
     def _add_item(self):
         text = self.type_combo.currentText()
-        if text == "品名规格":
-            name, ok = QInputDialog.getText(self, "新增品名规格", "规格名称:")
-            if ok and name.strip():
-                self.spec_dao.create(name=name.strip())
-        elif text == "检验标准":
-            element, ok = QInputDialog.getText(self, "新增检验标准", "元素名称 (如 Mn):")
-            if not ok or not element.strip():
-                return
-            min_val, ok2 = QInputDialog.getDouble(self, "最小值", f"{element} 最小值:", 0, 0, 999, 5)
-            if not ok2:
-                return
-            max_val, ok3 = QInputDialog.getDouble(self, "最大值", f"{element} 最大值:", 100, 0, 999, 5)
-            if not ok3:
-                return
-            self.lab_dao.update_standard(element.strip(), min_val, max_val)
-        elif text == "仓库":
-            name, ok = QInputDialog.getText(self, "新增仓库", "仓库名称:")
-            if ok and name.strip():
-                self.warehouse_dao.create(name=name.strip())
+        try:
+            if text == "品名规格":
+                name, ok = QInputDialog.getText(self, "新增品名规格", "规格名称:")
+                if ok and name.strip():
+                    self.spec_dao.create(name=name.strip())
+            elif text == "检验标准":
+                element, ok = QInputDialog.getText(self, "新增检验标准", "元素名称 (如 Mn):")
+                if not ok or not element.strip():
+                    return
+                min_val, ok2 = QInputDialog.getDouble(self, "最小值", f"{element} 最小值:", 0, 0, 999, 5)
+                if not ok2:
+                    return
+                max_val, ok3 = QInputDialog.getDouble(self, "最大值", f"{element} 最大值:", 100, 0, 999, 5)
+                if not ok3:
+                    return
+                self.lab_dao.update_standard(element.strip(), min_val, max_val)
+            elif text == "仓库":
+                name, ok = QInputDialog.getText(self, "新增仓库", "仓库名称:")
+                if ok and name.strip():
+                    self.warehouse_dao.create(name=name.strip())
+        except Exception as e:
+            self.show_error(f"保存失败: {e}")
         self.refresh()
 
     def _on_context_menu(self, pos):
