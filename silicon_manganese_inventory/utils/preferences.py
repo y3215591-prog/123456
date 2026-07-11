@@ -16,7 +16,7 @@ class UIPreferences:
 
     def load_header_state(self, page_key):
         raw = self._settings.value(f"{page_key}/header_state")
-        if raw:
+        if raw is not None and raw:
             return QByteArray.fromBase64(raw)
         return QByteArray()
 

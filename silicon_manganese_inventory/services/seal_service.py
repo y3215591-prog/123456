@@ -18,6 +18,9 @@ ALLOWED_TRANSITIONS = {
 }
 
 
+_MAX_BATCH_SIZE = 500
+
+
 class SealService:
     def __init__(self, db: DatabaseManager):
         self.db = db
@@ -121,6 +124,14 @@ class SealService:
         return start, end, [s["seal_code"] for s in seals]
 
     def _transition(self, seal_ids, new_status, **kwargs):
+        if not seal_ids:
+            return
+        total = len(seal_ids)
+        for batch_start in range(0, total, _MAX_BATCH_SIZE):
+            batch = seal_ids[batch_start:batch_start + _MAX_BATCH_SIZE]
+            self._transition_batch(batch, new_status, **kwargs)
+
+    def _transition_batch(self, seal_ids, new_status, **kwargs):
         if not seal_ids:
             return
         with self.db.get_connection() as conn:

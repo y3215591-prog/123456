@@ -99,11 +99,11 @@ class DailyShipmentPage(BasePage):
             svc = ExcelService(self.db)
             stats = svc.import_mes_shipments(file_path)
             msg = (f"导入完成:\n"
-                   f"  发货记录: {stats['imported']} 条\n"
-                   f"  跳过: {stats['skipped']} 条\n"
-                   f"  重复: {stats['duplicate']} 条\n"
-                   f"  出库单: {stats['outbound_created']} 个\n"
-                   f"  发货铅封: {stats['seal_shipped']} 个")
+                   f"  发货记录: {stats.get('imported', 0)} 条\n"
+                   f"  跳过: {stats.get('skipped', 0)} 条\n"
+                   f"  重复: {stats.get('duplicate', 0)} 条\n"
+                   f"  出库单: {stats.get('outbound_created', 0)} 个\n"
+                   f"  发货铅封: {stats.get('seal_shipped', 0)} 个")
             QMessageBox.information(self, "导入结果", msg)
         except Exception as e:
             self.show_error(f"导入失败: {e}")

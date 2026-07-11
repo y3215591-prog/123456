@@ -82,6 +82,7 @@ class OutboundDialog(BaseEasDialog):
 
         self.location_combo = QComboBox()
         loc_dao = LocationDAO(self.db)
+        has_items = False
         for l in loc_dao.list():
             if l["code"].startswith("Z"):
                 continue
@@ -89,6 +90,9 @@ class OutboundDialog(BaseEasDialog):
             if available <= 0:
                 continue
             self.location_combo.addItem(f"{l['code']} (库存{available}吨)", l["code"])
+            has_items = True
+        if not has_items:
+            self.location_combo.addItem("暂无可用库位", None)
         self.location_combo.currentIndexChanged.connect(self._on_location_changed)
         self.add_form_row("出库库位:", self.location_combo, cl)
 
@@ -184,13 +188,19 @@ class OutboundDialog(BaseEasDialog):
             remaining = self._get_order_remaining_qty(sales_order)
             if remaining is not None and qty > remaining:
                 msg += f"  [超发预警: 订单仅余 {remaining} 吨]"
-                self.quantity_input.setStyleSheet("QSpinBox { color: #DC2626; font-weight: bold; }")
+                self.quantity_input.setStyleSheet(
+                    "QSpinBox { border: 1px solid #D1D5DB; border-radius: 3px; padding: 5px 10px; "
+                    "font-size: 13px; background: #FFFFFF; min-height: 28px; color: #DC2626; font-weight: bold; }")
                 self.seal_preview.setStyleSheet("color: #DC2626; font-weight: bold; font-size: 12px;")
             else:
-                self.quantity_input.setStyleSheet("")
+                self.quantity_input.setStyleSheet(
+                    "QSpinBox { border: 1px solid #D1D5DB; border-radius: 3px; padding: 5px 10px; "
+                    "font-size: 13px; background: #FFFFFF; min-height: 28px; }")
                 self.seal_preview.setStyleSheet("color: #2B579A; font-weight: bold; font-size: 12px;")
         else:
-            self.quantity_input.setStyleSheet("")
+            self.quantity_input.setStyleSheet(
+                "QSpinBox { border: 1px solid #D1D5DB; border-radius: 3px; padding: 5px 10px; "
+                "font-size: 13px; background: #FFFFFF; min-height: 28px; }")
             self.seal_preview.setStyleSheet("color: #2B579A; font-weight: bold; font-size: 12px;")
         self.seal_preview.setText(msg)
 
@@ -240,9 +250,9 @@ class OutboundDialog(BaseEasDialog):
         if not cust_id:
             QMessageBox.warning(self, "错误", "请选择客户")
             return
-        sales_order = self.sales_order_input.text().strip() or None
-        contract = self.contract_input.text().strip() or None
-        plate = self.plate_input.text().strip() or None
+        sales_order = self.sales_order_input.text().strip()
+        contract = self.contract_input.text().strip()
+        plate = self.plate_input.text().strip()
         operator = self.operator_input.text()
         remark = self.remark_input.toPlainText()
 

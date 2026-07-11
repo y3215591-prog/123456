@@ -53,20 +53,23 @@ class OutboundPage(BasePage):
         order_nos = [r["sales_order_no"] for r in rows if r["sales_order_no"]]
         order_remaining = {}
         if order_nos:
+            unique_nos = list(set(order_nos))
             with self.db.get_connection() as conn:
-                placeholders = ",".join("?" * len(order_nos))
-                orders = conn.execute(
-                    f"SELECT so.order_no, so.quantity, "
-                    f"COALESCE(SUM(ds.load_quantity), 0) AS shipped "
-                    f"FROM sales_orders so "
-                    f"LEFT JOIN daily_shipments ds ON so.order_no=ds.sales_order_no "
-                    f"WHERE so.order_no IN ({placeholders}) "
-                    f"GROUP BY so.order_no",
-                    order_nos,
-                ).fetchall()
-                for o in orders:
-                    rem = (o["quantity"] or 0) - (o["shipped"] or 0)
-                    order_remaining[o["order_no"]] = f"余{rem}吨" if rem > 0 else "已完成"
+                for i in range(0, len(unique_nos), 500):
+                    chunk = unique_nos[i:i + 500]
+                    placeholders = ",".join(["?"] * len(chunk))
+                    orders = conn.execute(
+                        f"SELECT so.order_no, so.quantity, "
+                        f"COALESCE(SUM(ds.load_quantity), 0) AS shipped "
+                        f"FROM sales_orders so "
+                        f"LEFT JOIN daily_shipments ds ON so.order_no=ds.sales_order_no "
+                        f"WHERE so.order_no IN ({placeholders}) "
+                        f"GROUP BY so.order_no",
+                        chunk,
+                    ).fetchall()
+                    for o in orders:
+                        rem = (o["quantity"] or 0) - (o["shipped"] or 0)
+                        order_remaining[o["order_no"]] = f"余{rem}吨" if rem > 0 else "已完成"
 
         self._outbound_ids = []
         data = []

@@ -57,7 +57,7 @@ class LabResultDialog(BaseEasDialog):
                 s_content=self.s_input.value(),
                 c_content=self.c_input.value(),
             )
-        except ValueError as e:
+        except Exception as e:
             QMessageBox.warning(self, "错误", str(e))
             return
         self.accept()

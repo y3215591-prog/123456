@@ -31,16 +31,17 @@ class DatabaseManager:
             cur = conn.execute(
                 "SELECT COUNT(*) FROM pragma_table_info('customers') WHERE name='is_archived'"
             )
-            if cur.fetchone()[0] == 0:
+            row = cur.fetchone()
+            if not row or row[0] == 0:
                 conn.execute("ALTER TABLE customers ADD COLUMN is_archived INTEGER DEFAULT 0")
         self._seed_defaults()
 
     def backup(self, backup_path):
-        dst = os.path.abspath(backup_path)
+        dst = os.path.abspath(backup_path).replace("'", "''")
         os.makedirs(os.path.dirname(dst), exist_ok=True)
         with self.get_connection() as conn:
             conn.execute(f"VACUUM INTO '{dst}'")
-        return dst
+        return dst.replace("''", "'")
 
     def restore(self, backup_path):
         src = os.path.abspath(backup_path)

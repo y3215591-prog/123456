@@ -204,9 +204,9 @@ class SealDAO:
                    io.order_no AS inbound_no, io.date AS inbound_date,
                    oo.order_no AS outbound_no, oo.date AS outbound_date,
                    oo.sales_order_no, c.name AS customer_name
-                   FROM seal_numbers sn
-                   JOIN seal_batches sb ON sn.seal_batch_id=sb.id
-                   LEFT JOIN pre_inbound_orders pio ON sn.pre_inbound_id=pio.id
+                    FROM seal_numbers sn
+                    LEFT JOIN seal_batches sb ON sn.seal_batch_id=sb.id
+                    LEFT JOIN pre_inbound_orders pio ON sn.pre_inbound_id=pio.id
                    LEFT JOIN inbound_orders io ON sn.inbound_id=io.id
                    LEFT JOIN outbound_orders oo ON sn.outbound_id=oo.id
                    LEFT JOIN customers c ON oo.customer_id=c.id

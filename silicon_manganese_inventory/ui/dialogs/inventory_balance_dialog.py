@@ -2,7 +2,7 @@ from PySide6.QtWidgets import (
     QTableWidget, QTableWidgetItem, QHeaderView, QLabel,
 )
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QFont, QBrush, QColor
 from silicon_manganese_inventory.ui.dialogs.base_eas_dialog import BaseEasDialog
 
 
@@ -91,7 +91,7 @@ class InventoryBalanceDialog(BaseEasDialog):
         for c_idx, val in enumerate(total_data):
             w = QTableWidgetItem(val)
             w.setFont(bold_font)
-            w.setBackground(Qt.lightGray)
+            w.setBackground(QBrush(QColor(Qt.lightGray)))
             if c_idx == 5 or c_idx == 6:
                 if total_diff > 0:
                     w.setForeground(Qt.red)

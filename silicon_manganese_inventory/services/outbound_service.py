@@ -45,13 +45,18 @@ class OutboundService:
     def _collect_batch_nos(self, seal_codes):
         if not seal_codes:
             return ""
+        batch_set = set()
+        batch_size = 500
         with self.db.get_connection() as conn:
-            placeholders = ",".join("?" for _ in seal_codes)
-            rows = conn.execute(
-                f"SELECT DISTINCT batch_no FROM seal_numbers WHERE seal_code IN ({placeholders}) AND batch_no != ''",
-                seal_codes,
-            ).fetchall()
-        return ",".join(r["batch_no"] for r in rows if r["batch_no"])
+            for i in range(0, len(seal_codes), batch_size):
+                chunk = seal_codes[i:i + batch_size]
+                placeholders = ",".join("?" for _ in chunk)
+                rows = conn.execute(
+                    f"SELECT DISTINCT batch_no FROM seal_numbers WHERE seal_code IN ({placeholders}) AND batch_no != ''",
+                    chunk,
+                ).fetchall()
+                batch_set.update(r["batch_no"] for r in rows if r["batch_no"])
+        return ",".join(sorted(batch_set))
 
     def get_outbound(self, outbound_id):
         return self.outbound_dao.get_outbound(outbound_id)

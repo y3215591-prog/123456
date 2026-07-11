@@ -58,7 +58,7 @@ class CustomerPage(BasePage):
             rows = self.cust_dao.list(archived_only=self._archived)
         data = []
         for r in rows:
-            archived_mark = " [已归档]" if r["is_archived"] else ""
+            archived_mark = " [已归档]" if (r["is_archived"] or 0) else ""
             data.append([
                 r["id"], r["code"] or "", r["name"] + archived_mark,
                 r["contact_person"] or "", r["contact_phone"] or "",

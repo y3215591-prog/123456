@@ -15,6 +15,7 @@ class ExcelPreviewDialog(BaseEasDialog):
         self.import_type = import_type
         self.all_rows = []
         self.checked = set()
+        self._load_failed = False
         self._load_data()
         self._setup_ui()
 
@@ -27,6 +28,7 @@ class ExcelPreviewDialog(BaseEasDialog):
         except Exception as e:
             QMessageBox.critical(self, "错误", f"无法读取文件: {e}")
             self.all_rows = []
+            self._load_failed = True
 
     def _setup_ui(self):
         row_count = max(len(self.all_rows) - 1, 0)
@@ -53,7 +55,7 @@ class ExcelPreviewDialog(BaseEasDialog):
         self.table.cellClicked.connect(self._on_cell_clicked)
         self.body_layout.addWidget(self.table)
 
-        self.btn_layout.addStretch()
+        self.btn_layout.addStretch(1)
 
         select_all_btn = QPushButton("全选")
         select_all_btn.setStyleSheet(
@@ -76,8 +78,11 @@ class ExcelPreviewDialog(BaseEasDialog):
         import_btn = QPushButton("确认导入")
         import_btn.setStyleSheet(
             "QPushButton { background: #16A34A; color: white; border: none; padding: 6px 16px; border-radius: 3px; font-size: 13px; font-weight: 600; }"
-            "QPushButton:hover { background: #15803D; }")
+            "QPushButton:hover { background: #15803D; }"
+            "QPushButton:disabled { background: #9CA3AF; }")
         import_btn.clicked.connect(self.accept)
+        if self._load_failed:
+            import_btn.setEnabled(False)
         cancel_btn = QPushButton("取消")
         cancel_btn.setStyleSheet(
             "QPushButton { background: #FFFFFF; color: #374151; border: 1px solid #D1D5DB; padding: 6px 16px; border-radius: 3px; font-size: 13px; }"

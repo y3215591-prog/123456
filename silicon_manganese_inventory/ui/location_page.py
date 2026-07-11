@@ -204,8 +204,7 @@ class LocationPage(BasePage):
         code = code_item.text()
         current_status = status_item.text() if status_item else "活跃"
 
-        locations = self.loc_dao.list(active_only=False)
-        loc = next((l for l in locations if l["code"] == code), None)
+        loc = self.loc_dao.get_by_code(code)
         if not loc:
             return
 

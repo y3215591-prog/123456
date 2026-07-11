@@ -286,6 +286,10 @@ class DailyShipmentDialog(BaseEasDialog):
                         "SELECT seal_code FROM seal_numbers WHERE batch_no=? AND status='in_stock' ORDER BY seal_code LIMIT ?",
                         (data["batch_no"], qty_int),
                     ).fetchall()
+                if len(seals) < qty_int:
+                    QMessageBox.warning(self, "错误",
+                        f"批次 {data['batch_no']} 可用铅封号不足，需要 {qty_int} 个，仅有 {len(seals)} 个")
+                    return
                 seal_codes_list.extend([s["seal_code"] for s in seals])
 
         batch_no_str = ",".join(batches)
