@@ -84,6 +84,16 @@ class MainWindow(QMainWindow):
         self.theme_combo.currentIndexChanged.connect(self._on_theme_changed)
         top_layout.addStretch()
 
+        upgrade_btn = QPushButton("系统升级")
+        upgrade_btn.setFixedHeight(28)
+        upgrade_btn.setStyleSheet(
+            "QPushButton { background: #16A34A; color: white; border: none; "
+            "padding: 4px 12px; border-radius: 3px; font-size: 12px; } "
+            "QPushButton:hover { background: #15803D; }")
+        upgrade_btn.clicked.connect(self._show_upgrade)
+        top_layout.addWidget(upgrade_btn)
+        top_layout.addSpacing(8)
+
         reset_btn = QPushButton("数据重置")
         reset_btn.setFixedHeight(28)
         reset_btn.setStyleSheet(
@@ -167,6 +177,11 @@ class MainWindow(QMainWindow):
         self.status_bar.showMessage(
             f"  当前日期: {now}  |  库存总铅封个数: {total}  |  已用铅封号: {used}"
         )
+
+    def _show_upgrade(self):
+        from silicon_manganese_inventory.ui.dialogs.upgrade_dialog import UpgradeDialog
+        dlg = UpgradeDialog(self)
+        dlg.exec()
 
     def _reset_data(self):
         reply = QMessageBox.warning(
